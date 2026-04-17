@@ -40,8 +40,8 @@ This `v0-poc` release will be completed by working through these steps in order.
 
 | Step | Started | Completed |
 | --- | --- | --- |
-| [01-test-formatting-behavior](plan/05-testing/01-test-formatting-behavior.md) |  |  |
-| [02-fix-edge-cases-and-polish](plan/05-testing/02-fix-edge-cases-and-polish.md) |  |  |
+| [01-test-formatting-behavior](plan/05-testing/01-test-formatting-behavior.md) | 2026-04-16 | 2026-04-16 |
+| [02-fix-edge-cases-and-polish](plan/05-testing/02-fix-edge-cases-and-polish.md) | 2026-04-16 | 2026-04-16 |
 
 ## Release
 

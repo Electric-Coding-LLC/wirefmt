@@ -16,6 +16,32 @@ describe("runCli", () => {
     expect(runtime.stderr).toBe("");
   });
 
+  test("formats stdin and file input identically for the same document", async () => {
+    const input = "Title\n\n +--+\n |x|\n +--+\n\nNotes\n";
+    const stdinRuntime = createRuntime({
+      stdin: input,
+    });
+    const fileRuntime = createRuntime({
+      files: {
+        "fixture.txt": input,
+      },
+    });
+
+    const stdinExitCode = await runCli(["format"], stdinRuntime);
+    const fileExitCode = await runCli(["format", "fixture.txt"], fileRuntime);
+
+    expect(stdinExitCode).toBe(0);
+    expect(fileExitCode).toBe(0);
+    expect(stdinRuntime.stdout).toBe(
+      "Title\n\n +---+\n | x |\n +---+\n\nNotes\n",
+    );
+    expect(fileRuntime.stdout).toBe(
+      "Title\n\n +---+\n | x |\n +---+\n\nNotes\n",
+    );
+    expect(stdinRuntime.stderr).toBe("");
+    expect(fileRuntime.stderr).toBe("");
+  });
+
   test("formats file input with normalized output", async () => {
     const runtime = createRuntime({
       files: {
@@ -27,6 +53,18 @@ describe("runCli", () => {
 
     expect(exitCode).toBe(0);
     expect(runtime.stdout).toBe("+---+\n| y |\n+---+\n");
+    expect(runtime.stderr).toBe("");
+  });
+
+  test("passes unsupported plain text through unchanged", async () => {
+    const runtime = createRuntime({
+      stdin: "plain text\n",
+    });
+
+    const exitCode = await runCli(["format"], runtime);
+
+    expect(exitCode).toBe(0);
+    expect(runtime.stdout).toBe("plain text\n");
     expect(runtime.stderr).toBe("");
   });
 
