@@ -52,8 +52,13 @@ Supported arguments:
 - `major`
 - an explicit version like `0.2.0`
 
+By default, the helper pushes the release commit, waits for GitHub `CI` on the
+default branch to succeed for that exact SHA, and then pushes the matching
+release tag automatically.
+
 Add `--no-push` to stop after the local commit and tag.
-Add `--push-tag` to also push the tag immediately after the release commit.
+Add `--push-tag` to push the tag immediately after the release commit instead of
+waiting for `CI`.
 
 The helper now checks all of these before it creates the release commit:
 
@@ -125,19 +130,29 @@ Before using it:
 - Push the matching release tag for the same commit.
 
 The release workflow runs on a matching tag push such as `v0.2.0`, then checks
-that the tagged commit has already passed the `CI` workflow for a push to
-`main`.
+that the tagged commit has already passed the `CI` workflow for a push to the
+default branch.
 
 In practice, the release signal is:
 
-- a successful `CI` run for the target commit on `main`
+- a successful `CI` run for the target commit on the default branch
 - a matching release tag such as `v0.2.0` pushed after that
 
 Recommended sequence:
 
-1. `bun run release -- minor`
-2. Wait for `CI` on the pushed `main` commit to succeed.
-3. `git push origin v<version>`
+```sh
+bun run release -- minor
+```
+
+That pushes the release commit, polls GitHub for the matching `CI` run on the
+default branch, and only pushes `v<version>` after `CI` concludes with success.
+
+Manual alternative:
+
+1. `bun run release -- minor --no-push`
+2. `git push`
+3. Wait for `CI` on the pushed default-branch commit to succeed.
+4. `git push origin v<version>`
 
 The workflow reads the package name and version from `package.json`, confirms
 that the pushed tag matches that version, verifies successful `CI` for the
