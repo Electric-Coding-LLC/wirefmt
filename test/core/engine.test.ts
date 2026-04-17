@@ -16,6 +16,20 @@ describe("formatWireframe", () => {
     });
   });
 
+  test("normalizes a single box with uneven interior spacing", () => {
+    const input = "+----+\n|  x|\n+----+\n";
+
+    const result = formatWireframe(input, {
+      pad: 1,
+    });
+
+    expect(result).toEqual({
+      formattedText: "+---+\n| x |\n+---+\n",
+      changed: true,
+      warnings: [],
+    });
+  });
+
   test("preserves surrounding blocks while formatting a box block", () => {
     const input = "Title\n\n +--+\n |x|\n +--+\n\nNotes\n";
 
@@ -29,6 +43,59 @@ describe("formatWireframe", () => {
       changed: true,
       warnings: [],
     });
+  });
+
+  test("normalizes a box with mixed indentation in a content row", () => {
+    const input = " +--+\n  |x|\n +--+\n";
+
+    const result = formatWireframe(input, {
+      pad: 1,
+    });
+
+    expect(result).toEqual({
+      formattedText: " +---+\n | x |\n +---+\n",
+      changed: true,
+      warnings: [],
+    });
+  });
+
+  test("formats multiple independent box blocks in one input", () => {
+    const input = "+--+\n|a|\n+--+\n\n+--+\n|b|\n+--+\n";
+
+    const result = formatWireframe(input, {
+      pad: 1,
+    });
+
+    expect(result).toEqual({
+      formattedText: "+---+\n| a |\n+---+\n\n+---+\n| b |\n+---+\n",
+      changed: true,
+      warnings: [],
+    });
+  });
+
+  test("uses the minimum width when width is omitted and expands when needed", () => {
+    const input = "+---+\n|x|\n+---+\n";
+
+    const defaultWidth = formatWireframe(input, {
+      pad: 1,
+    });
+    const smallerWidth = formatWireframe(input, {
+      pad: 1,
+      width: 4,
+    });
+    const largerWidth = formatWireframe(input, {
+      pad: 1,
+      width: 10,
+    });
+
+    expect(defaultWidth.formattedText).toBe("+---+\n| x |\n+---+\n");
+    expect(smallerWidth.formattedText).toBe("+---+\n| x |\n+---+\n");
+    expect(largerWidth.formattedText).toBe(
+      "+--------+\n| x      |\n+--------+\n",
+    );
+    expect(defaultWidth.changed).toBe(true);
+    expect(smallerWidth.changed).toBe(true);
+    expect(largerWidth.changed).toBe(true);
   });
 
   test("passes unsupported multi-box layouts through unchanged with warnings", () => {
@@ -45,6 +112,39 @@ describe("formatWireframe", () => {
         {
           code: "unsupported-layout",
           message: "Contains multiple adjacent boxes or columns.",
+        },
+      ],
+    });
+  });
+
+  test("passes unsupported plain text through unchanged", () => {
+    const input = "plain text\n";
+
+    const result = formatWireframe(input, {
+      pad: 1,
+    });
+
+    expect(result).toEqual({
+      formattedText: input,
+      changed: false,
+      warnings: [],
+    });
+  });
+
+  test("passes through text outside a detected box with a warning", () => {
+    const input = "foo +--+\n|x|\n+--+\n";
+
+    const result = formatWireframe(input, {
+      pad: 1,
+    });
+
+    expect(result).toEqual({
+      formattedText: input,
+      changed: false,
+      warnings: [
+        {
+          code: "ambiguous-box",
+          message: "Contains a non-border row without box edges.",
         },
       ],
     });
@@ -111,6 +211,37 @@ describe("lintWireframe", () => {
         lineOrBlock: "1",
       },
     ]);
+  });
+
+  test("reports missing top and bottom borders on partial boxes", () => {
+    const missingTop = lintWireframe("|x|\n+--+\n", "fixture.txt").issues;
+    const missingBottom = lintWireframe("+--+\n|x|\n", "fixture.txt").issues;
+
+    expect(missingTop).toContainEqual({
+      code: "broken-border",
+      message: "Top and bottom borders must both be present.",
+      source: "fixture.txt",
+      lineOrBlock: "1",
+    });
+    expect(missingTop).toContainEqual({
+      code: "uneven-width",
+      message: "Rows do not agree on a single box width.",
+      source: "fixture.txt",
+      lineOrBlock: "1",
+    });
+
+    expect(missingBottom).toContainEqual({
+      code: "broken-border",
+      message: "Top and bottom borders must both be present.",
+      source: "fixture.txt",
+      lineOrBlock: "1",
+    });
+    expect(missingBottom).toContainEqual({
+      code: "uneven-width",
+      message: "Rows do not agree on a single box width.",
+      source: "fixture.txt",
+      lineOrBlock: "1",
+    });
   });
 
   test("does not flag literal pipe characters inside valid box content", () => {

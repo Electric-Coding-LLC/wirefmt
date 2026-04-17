@@ -163,7 +163,7 @@ export function analyzeWireframeBlock(
       );
     }
 
-    const content = extractContent(line.raw, leftEdge, lastPipe).trim();
+    const content = extractContent(line.raw, firstPipe, lastPipe).trim();
     contents.push(content);
 
     const observedInnerWidth = (lastPipe ?? rightEdge) - firstPipe - 1;
