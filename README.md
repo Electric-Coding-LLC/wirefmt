@@ -166,15 +166,16 @@ After installation, you can also run:
 wirefmt-mcp
 ```
 
-Registered tool:
+Registered tools:
 
 - `wirefmt.format`
+- `wirefmt.lint`
 
 MCP client wiring examples:
 
 - [docs/mcp.md](./docs/mcp.md)
 
-Input shape:
+`wirefmt.format` input:
 
 ```json
 {
@@ -184,27 +185,51 @@ Input shape:
 }
 ```
 
-Result shape:
+`wirefmt.format` result:
 
 ```json
 {
   "formattedText": "+--------+\n| x      |\n+--------+\n",
-  "changed": true,
-  "warnings": []
+  "changed": true
+}
+```
+
+`wirefmt.lint` input:
+
+```json
+{
+  "text": "+--+\n|x\n+--+\n",
+  "source": "fixture.txt"
+}
+```
+
+`wirefmt.lint` result:
+
+```json
+{
+  "issues": [
+    {
+      "code": "broken-border",
+      "message": "Content row is missing a closing edge.",
+      "source": "fixture.txt",
+      "lineOrBlock": "2"
+    }
+  ]
 }
 ```
 
 Notes:
 
 - `warnings` is omitted when the formatter has nothing to report.
-- The MCP tool uses the same formatter as the CLI, so behavior should match for
-  the same input.
-- The current MCP surface exposes formatting only. Lint is CLI-only for now.
+- `wirefmt.format` uses the same formatter as the CLI.
+- `wirefmt.lint` uses the same lint engine and stable issue codes as the CLI.
+- MCP `structuredContent` carries the canonical result contract. Text content is
+  still included for client compatibility.
 
 ## Codex Setup
 
-To use `wirefmt` from Codex, wire up the local MCP server and install the
-matching skill.
+To use `wirefmt` from Codex, wire up the local MCP server first. The shipped
+MCP tools are enough on their own; a custom skill is optional.
 
 Add this to `~/.codex/config.toml`:
 
@@ -215,15 +240,14 @@ command = "bun"
 args = ["run", "/Users/iamce/dev/electric/wirefmt/src/mcp/bin.ts"]
 ```
 
-Install the `wirefmt` skill from your skills repo into `~/.codex/skills`
-(a symlink works well):
+Then restart Codex. If you want a persistent instruction, add something short
+like this to your relevant skill or agent instructions:
 
-```sh
-ln -s /Users/iamce/dev/electric/skills/wirefmt ~/.codex/skills/wirefmt
+```text
+Use `wirefmt.format` to normalize supported ASCII wireframe boxes.
+Use `wirefmt.lint` to inspect suspected problems without changing the input.
+Do not fall back to the CLI unless the MCP server is unavailable.
 ```
-
-Then restart Codex. The skill tells Codex to use `wirefmt.format` for
-formatting and the CLI for linting.
 
 ## Formatting Guarantees
 

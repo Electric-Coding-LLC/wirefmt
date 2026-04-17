@@ -5,6 +5,7 @@ import {
   type LintResult,
   lintWireframe,
 } from "../core";
+import { formatLintIssuesText } from "../lint-output";
 import {
   CliError,
   getHelpText,
@@ -55,7 +56,7 @@ export async function runCli(
 
     const result = handlers.lint(text, source);
     if (result.issues.length > 0) {
-      runtime.writeStdout(`${formatLintOutput(result.issues)}\n`);
+      runtime.writeStdout(`${formatLintIssuesText(result.issues)}\n`);
       return 1;
     }
 
@@ -73,14 +74,6 @@ function buildFormatOptions(width: number | undefined, pad: number) {
     pad,
     ...(width === undefined ? {} : { width }),
   };
-}
-
-function formatLintOutput(issues: LintResult["issues"]): string {
-  return issues
-    .map((issue) => {
-      return `${issue.source}:${issue.lineOrBlock}: ${issue.code} ${issue.message}`;
-    })
-    .join("\n");
 }
 
 function toErrorMessage(error: unknown): string {

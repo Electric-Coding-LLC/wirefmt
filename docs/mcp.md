@@ -51,11 +51,12 @@ entrypoint:
 
 ## Tool Surface
 
-The server currently registers one tool:
+The server registers two tools:
 
 - `wirefmt.format`
+- `wirefmt.lint`
 
-Input:
+`wirefmt.format` input:
 
 ```json
 {
@@ -65,18 +66,48 @@ Input:
 }
 ```
 
-Output:
+`wirefmt.format` output:
 
 ```json
 {
   "formattedText": "+--------+\n| x      |\n+--------+\n",
-  "changed": true,
-  "warnings": []
+  "changed": true
 }
 ```
 
+`wirefmt.lint` input:
+
+```json
+{
+  "text": "+--+\n|x\n+--+\n",
+  "source": "fixture.txt"
+}
+```
+
+`wirefmt.lint` output:
+
+```json
+{
+  "issues": [
+    {
+      "code": "broken-border",
+      "message": "Content row is missing a closing edge.",
+      "source": "fixture.txt",
+      "lineOrBlock": "2"
+    }
+  ]
+}
+```
+
+## Codex Note
+
+For Codex, point `~/.codex/config.toml` at the same stdio server. A separate
+skill is optional; if you keep agent instructions, have them prefer
+`wirefmt.format` for formatting and `wirefmt.lint` for structured findings.
+
 ## Notes
 
-- The MCP server uses the same formatting engine as the CLI.
+- The MCP server uses the same shared formatter and lint engine as the CLI.
 - `warnings` is omitted when there is nothing to report.
-- The current MCP surface is formatting-only. Lint remains CLI-only.
+- `wirefmt.lint` defaults `source` to `<stdin>` when it is omitted.
+- `structuredContent` is the canonical result contract for both tools.

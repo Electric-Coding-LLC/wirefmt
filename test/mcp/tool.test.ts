@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { runWirefmtFormatTool } from "../../src/mcp";
+import { runWirefmtFormatTool, runWirefmtLintTool } from "../../src/mcp";
 
 describe("runWirefmtFormatTool", () => {
   test("uses the shared core formatter with default padding", () => {
@@ -31,6 +31,48 @@ describe("runWirefmtFormatTool", () => {
     expect(passthrough).toEqual({
       formattedText: "plain text\n",
       changed: false,
+    });
+  });
+});
+
+describe("runWirefmtLintTool", () => {
+  test("defaults the lint source to stdin and uses the shared core engine", () => {
+    const result = runWirefmtLintTool({
+      text: "+----+\n|x\n+--+\n",
+    });
+
+    expect(result).toEqual({
+      issues: [
+        {
+          code: "broken-border",
+          message: "Content row is missing a closing edge.",
+          source: "<stdin>",
+          lineOrBlock: "2",
+        },
+        {
+          code: "broken-border",
+          message: "Border corners are not aligned to the detected box.",
+          source: "<stdin>",
+          lineOrBlock: "3",
+        },
+        {
+          code: "uneven-width",
+          message: "Rows do not agree on a single box width.",
+          source: "<stdin>",
+          lineOrBlock: "1",
+        },
+      ],
+    });
+  });
+
+  test("honors an explicit lint source and returns an empty issue list", () => {
+    const result = runWirefmtLintTool({
+      text: "+---+\n| x |\n+---+\n",
+      source: "fixture.txt",
+    });
+
+    expect(result).toEqual({
+      issues: [],
     });
   });
 });
