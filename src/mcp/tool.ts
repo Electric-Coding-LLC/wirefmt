@@ -1,5 +1,12 @@
-import { DEFAULT_PAD, formatWireframe } from "../core";
-import type { WirefmtFormatToolInput, WirefmtFormatToolResult } from "./types";
+import { DEFAULT_PAD, formatWireframe, lintWireframe } from "../core";
+import type {
+  WirefmtFormatToolInput,
+  WirefmtFormatToolResult,
+  WirefmtLintToolInput,
+  WirefmtLintToolResult,
+} from "./types";
+
+const DEFAULT_LINT_SOURCE = "<stdin>";
 
 export function runWirefmtFormatTool(
   input: WirefmtFormatToolInput,
@@ -10,6 +17,16 @@ export function runWirefmtFormatTool(
     formattedText: result.formattedText,
     changed: result.changed,
     ...(result.warnings.length > 0 ? { warnings: result.warnings } : {}),
+  };
+}
+
+export function runWirefmtLintTool(
+  input: WirefmtLintToolInput,
+): WirefmtLintToolResult {
+  const result = lintWireframe(input.text, input.source ?? DEFAULT_LINT_SOURCE);
+
+  return {
+    issues: result.issues,
   };
 }
 

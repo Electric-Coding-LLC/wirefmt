@@ -1,6 +1,8 @@
 export { createWirefmtMcpServer, startWirefmtMcpServer } from "./server";
-export { runWirefmtFormatTool } from "./tool";
+export { runWirefmtFormatTool, runWirefmtLintTool } from "./tool";
 export type {
   WirefmtFormatToolInput,
   WirefmtFormatToolResult,
+  WirefmtLintToolInput,
+  WirefmtLintToolResult,
 } from "./types";

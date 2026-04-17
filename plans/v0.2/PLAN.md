@@ -19,9 +19,9 @@ This `v0.2` release will be completed by working through these steps in order.
 
 | Step | Started | Completed |
 | --- | --- | --- |
-| [01-add-mcp-lint-tool](03-implementation/01-add-mcp-lint-tool.md) | 2026-04-17 |  |
-| [02-align-cli-and-mcp-output](03-implementation/02-align-cli-and-mcp-output.md) | 2026-04-17 |  |
-| [03-polish-agent-setup-docs](03-implementation/03-polish-agent-setup-docs.md) | 2026-04-17 |  |
+| [01-add-mcp-lint-tool](03-implementation/01-add-mcp-lint-tool.md) | 2026-04-17 | 2026-04-17 |
+| [02-align-cli-and-mcp-output](03-implementation/02-align-cli-and-mcp-output.md) | 2026-04-17 | 2026-04-17 |
+| [03-polish-agent-setup-docs](03-implementation/03-polish-agent-setup-docs.md) | 2026-04-17 | 2026-04-17 |
 
 ## Testing
 
