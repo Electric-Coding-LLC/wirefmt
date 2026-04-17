@@ -4,9 +4,9 @@ import type { CliRuntime } from "../../src/cli/runtime";
 import type { FormatOptions, FormatResult, LintResult } from "../../src/core";
 
 describe("runCli", () => {
-  test("formats stdin with passthrough output", async () => {
+  test("formats stdin with normalized output", async () => {
     const runtime = createRuntime({
-      stdin: "+---+\n| x |\n+---+\n",
+      stdin: "+--+\n|x|\n+--+\n",
     });
 
     const exitCode = await runCli(["format"], runtime);
@@ -16,10 +16,10 @@ describe("runCli", () => {
     expect(runtime.stderr).toBe("");
   });
 
-  test("formats file input with passthrough output", async () => {
+  test("formats file input with normalized output", async () => {
     const runtime = createRuntime({
       files: {
-        "fixture.txt": "+---+\n| y |\n+---+\n",
+        "fixture.txt": "+--+\n|y|\n+--+\n",
       },
     });
 
