@@ -201,6 +201,30 @@ Notes:
   the same input.
 - The current MCP surface exposes formatting only. Lint is CLI-only for now.
 
+## Codex Setup
+
+To use `wirefmt` from Codex, wire up the local MCP server and install the
+matching skill.
+
+Add this to `~/.codex/config.toml`:
+
+```toml
+[mcp_servers.wirefmt]
+enabled = true
+command = "bun"
+args = ["run", "/Users/iamce/dev/electric/wirefmt/src/mcp/bin.ts"]
+```
+
+Install the `wirefmt` skill from your skills repo into `~/.codex/skills`
+(a symlink works well):
+
+```sh
+ln -s /Users/iamce/dev/electric/skills/wirefmt ~/.codex/skills/wirefmt
+```
+
+Then restart Codex. The skill tells Codex to use `wirefmt.format` for
+formatting and the CLI for linting.
+
 ## Formatting Guarantees
 
 - `width` is interpreted as the full outer width, including both borders.
