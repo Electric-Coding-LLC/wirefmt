@@ -49,5 +49,5 @@ This `v0-poc` release will be completed by working through these steps in order.
 | --- | --- | --- |
 | [01-create-support-documentation](06-release/01-create-support-documentation.md) | 2026-04-16 | 2026-04-16 |
 | [02-prepare-release-build](06-release/02-prepare-release-build.md) | 2026-04-16 | 2026-04-16 |
-| [03-ship-cli-and-mcp-tool](06-release/03-ship-cli-and-mcp-tool.md) |  |  |
-| [04-verify-release](06-release/04-verify-release.md) |  |  |
+| [03-ship-cli-and-mcp-tool](06-release/03-ship-cli-and-mcp-tool.md) | 2026-04-16 | 2026-04-16 |
+| [04-verify-release](06-release/04-verify-release.md) | 2026-04-16 | 2026-04-16 |
