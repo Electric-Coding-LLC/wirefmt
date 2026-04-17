@@ -34,7 +34,7 @@ This `v0.2` release will be completed by working through these steps in order.
 
 | Step | Started | Completed |
 | --- | --- | --- |
-| [01-prepare-v0.2-release](05-release/01-prepare-v0.2-release.md) | 2026-04-17 |  |
+| [01-prepare-v0.2-release](05-release/01-prepare-v0.2-release.md) | 2026-04-17 | 2026-04-17 |
 
 ## Notes
 

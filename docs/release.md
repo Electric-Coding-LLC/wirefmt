@@ -1,6 +1,18 @@
 # Release Guide
 
-This guide covers the shipping steps for the `v0-poc` release of `wirefmt`.
+This guide covers the `v0.2` release flow for `wirefmt`.
+
+## Release Message
+
+`wirefmt v0.2 makes formatting and linting available through matching CLI and MCP surfaces backed by one conservative box engine.`
+
+## Scope Guardrails
+
+- Ship one small product surface.
+- CLI: `wirefmt format`, `wirefmt lint`
+- MCP: `wirefmt.format`, `wirefmt.lint`
+- Keep the release centered on conservative single-box behavior.
+- Do not expand the release story into broader ASCII art or multi-box support.
 
 ## Prerequisites
 
@@ -21,10 +33,16 @@ bun run pack:dry-run
 ## Local Release Helper
 
 Use the bundled helper to bump the version, run the release gate, create the
-release commit, and create the matching `v<version>` tag:
+release commit, and create the matching local `v<version>` tag:
 
 ```sh
 bun run release -- patch
+```
+
+From the current `0.1.x` line, use `minor` for the first `v0.2` release:
+
+```sh
+bun run release -- minor
 ```
 
 Supported arguments:
@@ -32,9 +50,18 @@ Supported arguments:
 - `patch`
 - `minor`
 - `major`
-- an explicit version like `0.1.1`
+- an explicit version like `0.2.0`
 
 Add `--no-push` to stop after the local commit and tag.
+Add `--push-tag` to also push the tag immediately after the release commit.
+
+The helper now checks all of these before it creates the release commit:
+
+- full local test and lint gate
+- packed install from a clean temp directory
+- packaged `wirefmt` version, help output, and canonical format example
+- packaged `wirefmt-mcp` registration of `wirefmt.format` and `wirefmt.lint`
+- documented MCP format and lint calls through the installed server
 
 ## Build And Smoke-Test The Tarball
 
@@ -49,19 +76,27 @@ Install it into a clean temp directory and verify the shipped executables:
 ```sh
 tmp_dir="$(mktemp -d)"
 cd "$tmp_dir"
-bun add /path/to/electric_coding-wirefmt-0.1.0.tgz
+bun add /path/to/electric_coding-wirefmt-<version>.tgz
 ./node_modules/.bin/wirefmt --version
+./node_modules/.bin/wirefmt --help
 printf '+--+\n|x|\n+--+\n' | ./node_modules/.bin/wirefmt format
 ```
 
 Expected CLI output:
 
 ```text
-0.1.0
+<version>
 +---+
 | x |
 +---+
 ```
+
+Then confirm the MCP server exposes the intended `v0.2` tool surface. The
+release helper already automates this against the packed tarball, but the
+manual check is still:
+
+- `wirefmt.format`
+- `wirefmt.lint`
 
 ## Publish The Package
 
@@ -86,17 +121,29 @@ Before using it:
 
 - Configure npm trusted publishing for this repository if the workflow should
   publish to npm.
-- Bump `package.json` to the release version and merge that change to `main`.
+- Bump `package.json` to the release version and push that commit to `main`.
+- Push the matching release tag for the same commit.
 
-You can trigger it in either of these ways:
+The release workflow runs on a matching tag push such as `v0.2.0`, then checks
+that the tagged commit has already passed the `CI` workflow for a push to
+`main`.
 
-- Run it manually from GitHub Actions with `workflow_dispatch`.
-- Push a matching release tag such as `v0.1.1`.
+In practice, the release signal is:
 
-The workflow reads the package name and version from `package.json`, validates
-that a pushed tag matches that version, runs `bun run check`, runs package
-smoke tests, publishes to npm when that version is not already in the registry,
-then creates the GitHub release notes.
+- a successful `CI` run for the target commit on `main`
+- a matching release tag such as `v0.2.0` pushed after that
+
+Recommended sequence:
+
+1. `bun run release -- minor`
+2. Wait for `CI` on the pushed `main` commit to succeed.
+3. `git push origin v<version>`
+
+The workflow reads the package name and version from `package.json`, confirms
+that the pushed tag matches that version, verifies successful `CI` for the
+tagged commit, runs `bun run check`, runs package smoke tests, publishes to npm
+when that version is not already in the registry, then creates the GitHub
+release notes.
 
 ## Tag The Release
 
@@ -104,8 +151,8 @@ Create and push the version tag if the repo is using Git tags for released
 versions:
 
 ```sh
-git tag v0.1.0
-git push origin v0.1.0
+git tag v<version>
+git push origin v<version>
 ```
 
 ## Immediate Distribution Paths

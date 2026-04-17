@@ -11,10 +11,11 @@ function fail(message) {
 }
 
 function usage(exitCode = 1) {
-  console.error(`Usage: bun run release -- <patch|minor|major|x.y.z> [--no-push]
+  console.error(`Usage: bun run release -- <patch|minor|major|x.y.z> [--no-push] [--push-tag]
 
 Bumps the package version, runs the local release gate, creates a release commit
-and tag, and optionally pushes both to trigger the GitHub release workflow.`);
+and tag, pushes the release commit by default, and leaves tag publication until
+CI on main succeeds unless --push-tag is provided.`);
   process.exit(exitCode);
 }
 
@@ -51,10 +52,16 @@ function parseArgs(argv) {
 
   let bump = "";
   let noPush = false;
+  let pushTag = false;
 
   for (const arg of argv) {
     if (arg === "--no-push") {
       noPush = true;
+      continue;
+    }
+
+    if (arg === "--push-tag") {
+      pushTag = true;
       continue;
     }
 
@@ -73,7 +80,7 @@ function parseArgs(argv) {
     fail(`invalid bump "${bump}"`);
   }
 
-  return { bump, noPush };
+  return { bump, noPush, pushTag };
 }
 
 function ensureCleanGit() {
@@ -110,9 +117,28 @@ set -euo pipefail
 find . -maxdepth 1 -name '*.tgz' -delete
 bun pm pack
 tmp_dir="$(mktemp -d)"
+trap 'rm -rf "$tmp_dir"; rm -f "$PWD/${tarballName}"' EXIT
 bun add --cwd "$tmp_dir" "$PWD/${tarballName}"
 cd "$tmp_dir"
-./node_modules/.bin/wirefmt --version
+
+test -x ./node_modules/.bin/wirefmt
+test -x ./node_modules/.bin/wirefmt-mcp
+
+actual_version="$(./node_modules/.bin/wirefmt --version)"
+if [[ "$actual_version" != "${version}" ]]; then
+  echo "unexpected wirefmt version"
+  echo "expected: ${version}"
+  echo "actual: $actual_version"
+  exit 1
+fi
+
+help_output="$(./node_modules/.bin/wirefmt --help)"
+if [[ "$help_output" != *"wirefmt format"* ]] || [[ "$help_output" != *"wirefmt lint"* ]]; then
+  echo "wirefmt help output is missing the expected commands"
+  printf '%s\n' "$help_output"
+  exit 1
+fi
+
 actual_output="$(printf '+--+\\n|x|\\n+--+\\n' | ./node_modules/.bin/wirefmt format)"
 expected_output=$'+---+\\n| x |\\n+---+'
 if [[ "$actual_output" != "$expected_output" ]]; then
@@ -123,8 +149,89 @@ if [[ "$actual_output" != "$expected_output" ]]; then
   printf '%s\\n' "$actual_output"
   exit 1
 fi
-./node_modules/.bin/wirefmt-mcp </dev/null >/dev/null 2>&1 || true
-rm -f "$PWD/${tarballName}"
+
+node --input-type=module - "${version}" <<'EOF'
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+
+const expectedVersion = process.argv[2];
+const client = new Client({
+  name: "wirefmt-release-smoke",
+  version: "0.0.0",
+});
+const transport = new StdioClientTransport({
+  command: "./node_modules/.bin/wirefmt-mcp",
+  cwd: process.cwd(),
+  stderr: "pipe",
+});
+
+function fail(message) {
+  throw new Error(message);
+}
+
+try {
+  await client.connect(transport);
+
+  const serverVersion = client.getServerVersion();
+  if (!serverVersion || serverVersion.name !== "wirefmt") {
+    fail("MCP server did not identify itself as wirefmt");
+  }
+
+  if (serverVersion.version !== expectedVersion) {
+    fail(
+      \`unexpected MCP server version: expected \${expectedVersion}, received \${serverVersion.version}\`,
+    );
+  }
+
+  const toolList = await client.listTools();
+  const toolNames = toolList.tools.map((tool) => tool.name).sort();
+  const expectedToolNames = ["wirefmt.format", "wirefmt.lint"];
+  if (toolNames.join(",") !== expectedToolNames.join(",")) {
+    fail(
+      \`unexpected MCP tool list: expected \${expectedToolNames.join(", ")}, received \${toolNames.join(", ")}\`,
+    );
+  }
+
+  const formatResult = await client.callTool({
+    name: "wirefmt.format",
+    arguments: {
+      text: "+--+\\n|x|\\n+--+\\n",
+    },
+  });
+
+  if (
+    !formatResult.structuredContent ||
+    formatResult.structuredContent.formattedText !== "+---+\\n| x |\\n+---+\\n" ||
+    formatResult.structuredContent.changed !== true
+  ) {
+    fail("unexpected MCP format result");
+  }
+
+  const lintResult = await client.callTool({
+    name: "wirefmt.lint",
+    arguments: {
+      text: "+--+\\n|x\\n+--+\\n",
+      source: "fixture.txt",
+    },
+  });
+
+  const issues = lintResult.structuredContent?.issues;
+  if (!Array.isArray(issues) || issues.length === 0) {
+    fail("unexpected MCP lint result");
+  }
+
+  const brokenBorderIssue = issues.find((issue) => issue.code === "broken-border");
+  if (
+    !brokenBorderIssue ||
+    brokenBorderIssue.source !== "fixture.txt" ||
+    brokenBorderIssue.lineOrBlock !== "2"
+  ) {
+    fail("MCP lint result did not preserve the documented broken-border finding");
+  }
+} finally {
+  await client.close();
+}
+EOF
 `;
 
   run("bash", ["-lc", script], repoRoot);
@@ -161,7 +268,7 @@ run("git", ["tag", releaseTag]);
 if (options.noPush) {
   console.log("› Skipping git push (--no-push).");
   console.log(
-    `  To publish later, run: git push && git push origin ${releaseTag}`,
+    `  To publish later, run: git push && wait for CI on main to succeed, then git push origin ${releaseTag}`,
   );
   process.exit(0);
 }
@@ -169,9 +276,17 @@ if (options.noPush) {
 console.log("› git push");
 run("git", ["push"]);
 
-console.log(`› git push origin ${releaseTag}`);
-run("git", ["push", "origin", releaseTag]);
+if (options.pushTag) {
+  console.log(`› git push origin ${releaseTag}`);
+  run("git", ["push", "origin", releaseTag]);
+
+  console.log(
+    `› Release workflow will publish ${packageJson.name}@${packageJson.version} if CI has already succeeded on main for ${releaseTag}.`,
+  );
+  process.exit(0);
+}
 
 console.log(
-  `› Release workflow will publish ${packageJson.name}@${packageJson.version} from tag ${releaseTag}.`,
+  `› Waiting for CI on main is required before publishing ${releaseTag}.`,
 );
+console.log(`  After CI succeeds, run: git push origin ${releaseTag}`);
