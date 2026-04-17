@@ -28,7 +28,7 @@ This `v0-poc` release will be completed by working through these steps in order.
 
 | Step | Started | Completed |
 | --- | --- | --- |
-| [01-set-up-project-foundation](plan/04-implementation/01-set-up-project-foundation.md) |  |  |
+| [01-set-up-project-foundation](plan/04-implementation/01-set-up-project-foundation.md) | 2026-04-16 | 2026-04-16 |
 | [02-build-parser-and-block-model](plan/04-implementation/02-build-parser-and-block-model.md) |  |  |
 | [03-build-box-detection](plan/04-implementation/03-build-box-detection.md) |  |  |
 | [04-build-normalization-and-rendering](plan/04-implementation/04-build-normalization-and-rendering.md) |  |  |
