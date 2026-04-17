@@ -14,8 +14,9 @@ function usage(exitCode = 1) {
   console.error(`Usage: bun run release -- <patch|minor|major|x.y.z> [--no-push] [--push-tag]
 
 Bumps the package version, runs the local release gate, creates a release commit
-and tag, pushes the release commit by default, and leaves tag publication until
-CI on main succeeds unless --push-tag is provided.`);
+and tag, pushes the release commit by default, waits for CI on the default
+branch to succeed, and then pushes the release tag unless --no-push or
+--push-tag is provided.`);
   process.exit(exitCode);
 }
 
@@ -42,6 +43,34 @@ function runQuiet(command, args, cwd = repoRoot) {
     stderr: "ignore",
     stdin: "ignore",
     env: process.env,
+  });
+}
+
+function readStdout(command, args, cwd = repoRoot) {
+  const result = Bun.spawnSync({
+    cmd: [command, ...args],
+    cwd,
+    stdout: "pipe",
+    stderr: "pipe",
+    stdin: "ignore",
+    env: process.env,
+  });
+
+  if (result.exitCode !== 0) {
+    const stderr = result.stderr.toString().trim();
+    fail(
+      stderr.length > 0
+        ? `${command} ${args.join(" ")} failed: ${stderr}`
+        : `${command} ${args.join(" ")} failed`,
+    );
+  }
+
+  return result.stdout.toString().trim();
+}
+
+async function sleep(milliseconds) {
+  await new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
   });
 }
 
@@ -80,6 +109,10 @@ function parseArgs(argv) {
     fail(`invalid bump "${bump}"`);
   }
 
+  if (noPush && pushTag) {
+    fail("--no-push cannot be combined with --push-tag");
+  }
+
   return { bump, noPush, pushTag };
 }
 
@@ -108,6 +141,125 @@ function ensureCleanGit() {
 function readPackageJson() {
   const packageJsonPath = path.join(repoRoot, "package.json");
   return JSON.parse(readFileSync(packageJsonPath, "utf8"));
+}
+
+function getCurrentBranchName() {
+  return readStdout("git", ["branch", "--show-current"]);
+}
+
+function getCurrentCommitSha() {
+  return readStdout("git", ["rev-parse", "HEAD"]);
+}
+
+function getDefaultBranchName() {
+  const remoteHead = readStdout("git", [
+    "symbolic-ref",
+    "--short",
+    "refs/remotes/origin/HEAD",
+  ]);
+
+  return remoteHead.replace(/^origin\//, "");
+}
+
+function ensureGithubCliReady() {
+  readStdout("gh", ["--version"]);
+  readStdout("gh", ["auth", "status"]);
+}
+
+function ensureOnDefaultBranch(defaultBranch) {
+  const currentBranch = getCurrentBranchName();
+  if (currentBranch !== defaultBranch) {
+    fail(
+      `release push flow must run from ${defaultBranch}; current branch is ${currentBranch}`,
+    );
+  }
+}
+
+function getRepoNameWithOwner() {
+  return readStdout("gh", [
+    "repo",
+    "view",
+    "--json",
+    "nameWithOwner",
+    "-q",
+    ".nameWithOwner",
+  ]);
+}
+
+function readCiRunStatus(commitSha, defaultBranch, repoNameWithOwner) {
+  const runsJson = readStdout("gh", [
+    "api",
+    `repos/${repoNameWithOwner}/actions/workflows/ci.yml/runs`,
+    "-f",
+    `head_sha=${commitSha}`,
+    "-f",
+    "event=push",
+    "-f",
+    `branch=${defaultBranch}`,
+    "-f",
+    "per_page=1",
+  ]);
+
+  const response = JSON.parse(runsJson);
+  const run = response.workflow_runs?.[0];
+
+  if (!run) {
+    return {
+      status: "",
+      conclusion: "",
+      htmlUrl: "",
+    };
+  }
+
+  return {
+    status: run.status ?? "",
+    conclusion: run.conclusion ?? "",
+    htmlUrl: run.html_url ?? "",
+  };
+}
+
+async function waitForSuccessfulCi(commitSha, defaultBranch) {
+  const timeoutMs = 30 * 60 * 1000;
+  const pollIntervalMs = 15 * 1000;
+  const startedAt = Date.now();
+  const repoNameWithOwner = getRepoNameWithOwner();
+
+  console.log(
+    `› Waiting for CI on ${defaultBranch} to finish for ${commitSha.slice(0, 12)}`,
+  );
+
+  while (Date.now() - startedAt < timeoutMs) {
+    const run = readCiRunStatus(commitSha, defaultBranch, repoNameWithOwner);
+
+    if (run.status.length === 0) {
+      console.log("  No CI run found yet. Retrying in 15s...");
+      await sleep(pollIntervalMs);
+      continue;
+    }
+
+    if (run.status !== "completed") {
+      console.log(
+        `  CI status: ${run.status}${run.htmlUrl ? ` (${run.htmlUrl})` : ""}`,
+      );
+      await sleep(pollIntervalMs);
+      continue;
+    }
+
+    if (run.conclusion !== "success") {
+      fail(
+        `CI did not succeed for ${commitSha.slice(0, 12)} on ${defaultBranch}: ${run.conclusion || "unknown"}${run.htmlUrl ? ` (${run.htmlUrl})` : ""}`,
+      );
+    }
+
+    console.log(
+      `› CI succeeded for ${commitSha.slice(0, 12)}${run.htmlUrl ? ` (${run.htmlUrl})` : ""}`,
+    );
+    return;
+  }
+
+  fail(
+    `timed out waiting for CI on ${defaultBranch} for ${commitSha.slice(0, 12)}`,
+  );
 }
 
 function smokeTestTarball(version) {
@@ -238,8 +390,10 @@ EOF
 }
 
 const options = parseArgs(process.argv.slice(2));
-
+const shouldWaitForCi = !options.noPush && !options.pushTag;
 ensureCleanGit();
+
+const defaultBranch = getDefaultBranchName();
 
 console.log(`› npm version ${options.bump} --no-git-tag-version`);
 run("npm", ["version", options.bump, "--no-git-tag-version"]);
@@ -268,25 +422,37 @@ run("git", ["tag", releaseTag]);
 if (options.noPush) {
   console.log("› Skipping git push (--no-push).");
   console.log(
-    `  To publish later, run: git push && wait for CI on main to succeed, then git push origin ${releaseTag}`,
+    `  To publish later, run: git push && wait for CI on ${defaultBranch} to succeed, then git push origin ${releaseTag}`,
   );
   process.exit(0);
 }
 
+ensureOnDefaultBranch(defaultBranch);
+
 console.log("› git push");
 run("git", ["push"]);
+
+const releaseCommitSha = getCurrentCommitSha();
+
+if (shouldWaitForCi) {
+  ensureGithubCliReady();
+  await waitForSuccessfulCi(releaseCommitSha, defaultBranch);
+
+  console.log(`› git push origin ${releaseTag}`);
+  run("git", ["push", "origin", releaseTag]);
+
+  console.log(
+    `› Release workflow will publish ${packageJson.name}@${packageJson.version} from ${releaseTag}.`,
+  );
+  process.exit(0);
+}
 
 if (options.pushTag) {
   console.log(`› git push origin ${releaseTag}`);
   run("git", ["push", "origin", releaseTag]);
 
   console.log(
-    `› Release workflow will publish ${packageJson.name}@${packageJson.version} if CI has already succeeded on main for ${releaseTag}.`,
+    `› Release workflow will publish ${packageJson.name}@${packageJson.version} if CI has already succeeded on ${defaultBranch} for ${releaseTag}.`,
   );
   process.exit(0);
 }
-
-console.log(
-  `› Waiting for CI on main is required before publishing ${releaseTag}.`,
-);
-console.log(`  After CI succeeds, run: git push origin ${releaseTag}`);
