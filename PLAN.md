@@ -29,12 +29,12 @@ This `v0-poc` release will be completed by working through these steps in order.
 | Step | Started | Completed |
 | --- | --- | --- |
 | [01-set-up-project-foundation](plan/04-implementation/01-set-up-project-foundation.md) | 2026-04-16 | 2026-04-16 |
-| [02-build-parser-and-block-model](plan/04-implementation/02-build-parser-and-block-model.md) |  |  |
-| [03-build-box-detection](plan/04-implementation/03-build-box-detection.md) |  |  |
-| [04-build-normalization-and-rendering](plan/04-implementation/04-build-normalization-and-rendering.md) |  |  |
-| [05-add-cli-entrypoints](plan/04-implementation/05-add-cli-entrypoints.md) |  |  |
-| [06-add-mcp-wrapper](plan/04-implementation/06-add-mcp-wrapper.md) |  |  |
-| [07-add-lint-mode](plan/04-implementation/07-add-lint-mode.md) |  |  |
+| [02-build-parser-and-block-model](plan/04-implementation/02-build-parser-and-block-model.md) | 2026-04-16 | 2026-04-16 |
+| [03-build-box-detection](plan/04-implementation/03-build-box-detection.md) | 2026-04-16 | 2026-04-16 |
+| [04-build-normalization-and-rendering](plan/04-implementation/04-build-normalization-and-rendering.md) | 2026-04-16 | 2026-04-16 |
+| [05-add-cli-entrypoints](plan/04-implementation/05-add-cli-entrypoints.md) | 2026-04-16 | 2026-04-16 |
+| [06-add-mcp-wrapper](plan/04-implementation/06-add-mcp-wrapper.md) | 2026-04-16 | 2026-04-16 |
+| [07-add-lint-mode](plan/04-implementation/07-add-lint-mode.md) | 2026-04-16 | 2026-04-16 |
 
 ## Testing
 

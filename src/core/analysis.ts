@@ -1,0 +1,435 @@
+import type { WireframeBlock } from "./document";
+import type { FormatOptions, FormatWarning, LintIssueCode } from "./types";
+
+interface InternalIssue {
+  readonly code: LintIssueCode;
+  readonly message: string;
+  readonly lineOrBlock: string;
+}
+
+interface ObservedLine {
+  readonly raw: string;
+  readonly lineNumber: number;
+  readonly pluses: readonly number[];
+  readonly pipes: readonly number[];
+}
+
+export interface AnalyzedBlock {
+  readonly lines: readonly string[];
+  readonly warnings: readonly FormatWarning[];
+  readonly issues: readonly InternalIssue[];
+}
+
+export function analyzeWireframeBlock(
+  block: WireframeBlock,
+  options: FormatOptions,
+): AnalyzedBlock {
+  const observed = block.lines.map((raw, index) => {
+    return {
+      raw,
+      lineNumber: block.startLine + index,
+      pluses: findCharacterPositions(raw, "+"),
+      pipes: findCharacterPositions(raw, "|"),
+    } satisfies ObservedLine;
+  });
+
+  if (!hasBorderIntent(observed) || !hasPipeIntent(observed)) {
+    return passthrough(block);
+  }
+
+  if (observed.some((line) => line.pluses.length > 2)) {
+    return unsupportedLayout(
+      block,
+      "Contains multiple adjacent boxes or columns.",
+    );
+  }
+
+  const borderIndexes = observed
+    .map((line, index) => {
+      return isBorderLikeLine(line) ? index : -1;
+    })
+    .filter((index) => index >= 0);
+
+  if (borderIndexes.length === 0) {
+    return ambiguousBox(
+      block,
+      "Looks box-like but the border shape is unclear.",
+    );
+  }
+
+  if (borderIndexes.length > 2) {
+    return unsupportedLayout(block, "Contains interior border rows.");
+  }
+
+  if (
+    borderIndexes.some((index) => index !== 0 && index !== observed.length - 1)
+  ) {
+    return unsupportedLayout(block, "Contains interior border rows.");
+  }
+
+  const contentIndexes = observed
+    .map((line, index) => {
+      return isBorderLikeLine(line) ? -1 : index;
+    })
+    .filter((index) => index >= 0);
+
+  if (contentIndexes.length === 0) {
+    return ambiguousBox(block, "Missing box content rows.");
+  }
+
+  const edgeCandidates = collectEdgeCandidates(observed);
+  if (edgeCandidates === undefined) {
+    return ambiguousBox(block, "Unable to infer a stable box width.");
+  }
+
+  const issues: InternalIssue[] = [];
+  const contents: string[] = [];
+  const innerWidths: number[] = [];
+  const { leftEdge, rightEdge } = edgeCandidates;
+  const topBorderPresent = borderIndexes.includes(0);
+  const bottomBorderPresent = borderIndexes.includes(observed.length - 1);
+
+  for (const line of observed) {
+    if (!hasWhitespaceOnlyPrefix(line.raw, leftEdge)) {
+      return unsupportedLayout(
+        block,
+        "Contains text outside the detected box.",
+      );
+    }
+
+    if (isBorderLikeLine(line)) {
+      if (line.pluses[0] !== leftEdge || line.pluses[1] !== rightEdge) {
+        issues.push(
+          createIssue(
+            "broken-border",
+            "Border corners are not aligned to the detected box.",
+            line.lineNumber,
+          ),
+        );
+      }
+
+      const [firstPlus, lastPlus] = line.pluses;
+      if (firstPlus !== undefined && lastPlus !== undefined) {
+        innerWidths.push(lastPlus - firstPlus - 1);
+      }
+      continue;
+    }
+
+    const firstPipe = line.pipes[0];
+    if (firstPipe === undefined) {
+      return ambiguousBox(
+        block,
+        "Contains a non-border row without box edges.",
+      );
+    }
+
+    const lastPipe = line.pipes.length < 2 ? undefined : line.pipes.at(-1);
+
+    if (firstPipe !== leftEdge) {
+      issues.push(
+        createIssue(
+          "misaligned-edge",
+          "Left edge is not aligned with the rest of the block.",
+          line.lineNumber,
+        ),
+      );
+    }
+
+    if (lastPipe === undefined) {
+      issues.push(
+        createIssue(
+          "broken-border",
+          "Content row is missing a closing edge.",
+          line.lineNumber,
+        ),
+      );
+    } else if (lastPipe !== rightEdge) {
+      issues.push(
+        createIssue(
+          "misaligned-edge",
+          "Right edge is not aligned with the rest of the block.",
+          line.lineNumber,
+        ),
+      );
+    }
+
+    if (
+      lastPipe !== undefined &&
+      !hasWhitespaceOnlySuffix(line.raw, lastPipe)
+    ) {
+      return unsupportedLayout(
+        block,
+        "Contains text outside the detected box.",
+      );
+    }
+
+    const content = extractContent(line.raw, leftEdge, lastPipe).trim();
+    contents.push(content);
+
+    const observedInnerWidth = (lastPipe ?? rightEdge) - firstPipe - 1;
+    if (observedInnerWidth > 0) {
+      innerWidths.push(observedInnerWidth);
+    }
+  }
+
+  if (!topBorderPresent || !bottomBorderPresent) {
+    issues.push(
+      createIssue(
+        "broken-border",
+        "Top and bottom borders must both be present.",
+        block.startLine,
+      ),
+    );
+  }
+
+  if (new Set(innerWidths).size > 1) {
+    issues.push(
+      createIssue(
+        "uneven-width",
+        "Rows do not agree on a single box width.",
+        block.startLine,
+      ),
+    );
+  }
+
+  const renderedLines = renderBoxLines(leftEdge, contents, options);
+
+  return {
+    lines: renderedLines,
+    warnings: [],
+    issues: dedupeIssues(issues),
+  };
+}
+
+function collectEdgeCandidates(
+  lines: readonly ObservedLine[],
+): { readonly leftEdge: number; readonly rightEdge: number } | undefined {
+  const leftCandidates: number[] = [];
+  const rightCandidates: number[] = [];
+
+  for (const line of lines) {
+    if (isBorderLikeLine(line)) {
+      leftCandidates.push(line.pluses[0] ?? -1);
+      rightCandidates.push(line.pluses[1] ?? -1);
+      continue;
+    }
+
+    if (line.pipes.length >= 1) {
+      leftCandidates.push(line.pipes[0] ?? -1);
+    }
+
+    const rightPipe = line.pipes.length < 2 ? undefined : line.pipes.at(-1);
+    if (rightPipe !== undefined) {
+      rightCandidates.push(rightPipe);
+    }
+  }
+
+  const leftEdge = pickMode(leftCandidates, "min");
+  const rightEdge = pickMode(rightCandidates, "max");
+  if (
+    leftEdge === undefined ||
+    rightEdge === undefined ||
+    rightEdge <= leftEdge
+  ) {
+    return undefined;
+  }
+
+  return { leftEdge, rightEdge };
+}
+
+function renderBoxLines(
+  leftEdge: number,
+  contents: readonly string[],
+  options: FormatOptions,
+): readonly string[] {
+  const indent = " ".repeat(leftEdge);
+  const minimumOuterWidth =
+    Math.max(...contents.map((content) => content.length), 0) +
+    options.pad * 2 +
+    2;
+  const outerWidth = Math.max(options.width ?? 0, minimumOuterWidth);
+  const innerWidth = outerWidth - 2;
+  const border = `${indent}+${"-".repeat(innerWidth)}+`;
+
+  const rows = contents.map((content) => {
+    const trailingSpaces = innerWidth - options.pad - content.length;
+    return `${indent}|${" ".repeat(options.pad)}${content}${" ".repeat(
+      trailingSpaces,
+    )}|`;
+  });
+
+  return [border, ...rows, border];
+}
+
+function passthrough(block: WireframeBlock): AnalyzedBlock {
+  return {
+    lines: block.lines,
+    warnings: [],
+    issues: [],
+  };
+}
+
+function ambiguousBox(block: WireframeBlock, message: string): AnalyzedBlock {
+  return {
+    lines: block.lines,
+    warnings: [createWarning("ambiguous-box", message)],
+    issues: [createIssue("ambiguous-box", message, block.startLine)],
+  };
+}
+
+function unsupportedLayout(
+  block: WireframeBlock,
+  message: string,
+): AnalyzedBlock {
+  return {
+    lines: block.lines,
+    warnings: [createWarning("unsupported-layout", message)],
+    issues: [createIssue("unsupported-layout", message, block.startLine)],
+  };
+}
+
+function hasBorderIntent(lines: readonly ObservedLine[]): boolean {
+  return lines.some((line) => {
+    if (line.pluses.length < 2) {
+      return false;
+    }
+
+    const firstPlus = line.pluses[0];
+    const lastPlus = line.pluses.at(-1);
+    if (
+      firstPlus === undefined ||
+      lastPlus === undefined ||
+      lastPlus <= firstPlus
+    ) {
+      return false;
+    }
+
+    return line.raw.slice(firstPlus + 1, lastPlus).includes("-");
+  });
+}
+
+function hasPipeIntent(lines: readonly ObservedLine[]): boolean {
+  return lines.some((line) => line.pipes.length > 0);
+}
+
+function isBorderLikeLine(line: ObservedLine): boolean {
+  if (line.pluses.length !== 2) {
+    return false;
+  }
+
+  const [left, right] = line.pluses;
+  if (left === undefined || right === undefined || right - left < 2) {
+    return false;
+  }
+
+  if (
+    !hasWhitespaceOnlyPrefix(line.raw, left) ||
+    !hasWhitespaceOnlySuffix(line.raw, right)
+  ) {
+    return false;
+  }
+
+  const between = line.raw.slice(left + 1, right);
+  return between.includes("-") && /^[ -]+$/.test(between);
+}
+
+function extractContent(
+  raw: string,
+  leftEdge: number,
+  rightEdge: number | undefined,
+): string {
+  const start = Math.min(leftEdge + 1, raw.length);
+  const end =
+    rightEdge === undefined ? raw.length : Math.min(rightEdge, raw.length);
+  return raw.slice(start, end);
+}
+
+function hasWhitespaceOnlyPrefix(raw: string, edge: number): boolean {
+  return /^\s*$/.test(raw.slice(0, Math.max(edge, 0)));
+}
+
+function hasWhitespaceOnlySuffix(raw: string, edge: number): boolean {
+  return /^\s*$/.test(raw.slice(edge + 1));
+}
+
+function findCharacterPositions(
+  text: string,
+  character: string,
+): readonly number[] {
+  const positions: number[] = [];
+
+  for (let index = 0; index < text.length; index += 1) {
+    if (text[index] === character) {
+      positions.push(index);
+    }
+  }
+
+  return positions;
+}
+
+function pickMode(
+  values: readonly number[],
+  tieBreak: "min" | "max",
+): number | undefined {
+  if (values.length === 0) {
+    return undefined;
+  }
+
+  const counts = new Map<number, number>();
+  for (const value of values) {
+    counts.set(value, (counts.get(value) ?? 0) + 1);
+  }
+
+  let bestValue: number | undefined;
+  let bestCount = -1;
+
+  for (const [value, count] of counts.entries()) {
+    if (
+      count > bestCount ||
+      (count === bestCount &&
+        bestValue !== undefined &&
+        ((tieBreak === "min" && value < bestValue) ||
+          (tieBreak === "max" && value > bestValue)))
+    ) {
+      bestValue = value;
+      bestCount = count;
+    }
+  }
+
+  return bestValue;
+}
+
+function dedupeIssues(
+  issues: readonly InternalIssue[],
+): readonly InternalIssue[] {
+  const seen = new Set<string>();
+  const deduped: InternalIssue[] = [];
+
+  for (const issue of issues) {
+    const key = `${issue.code}:${issue.lineOrBlock}:${issue.message}`;
+    if (seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    deduped.push(issue);
+  }
+
+  return deduped;
+}
+
+function createIssue(
+  code: LintIssueCode,
+  message: string,
+  lineOrBlock: number,
+): InternalIssue {
+  return {
+    code,
+    message,
+    lineOrBlock: `${lineOrBlock}`,
+  };
+}
+
+function createWarning(code: string, message: string): FormatWarning {
+  return { code, message };
+}

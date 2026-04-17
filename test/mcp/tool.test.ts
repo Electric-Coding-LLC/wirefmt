@@ -3,15 +3,15 @@ import { runWirefmtFormatTool } from "../../src/mcp";
 
 describe("runWirefmtFormatTool", () => {
   test("uses the shared core formatter with default padding", () => {
-    const input = "+---+\n| x |\n+---+\n";
+    const input = "+--+\n|x|\n+--+\n";
 
     const result = runWirefmtFormatTool({
       text: input,
     });
 
     expect(result).toEqual({
-      formattedText: input,
-      changed: false,
+      formattedText: "+---+\n| x |\n+---+\n",
+      changed: true,
     });
   });
 });
