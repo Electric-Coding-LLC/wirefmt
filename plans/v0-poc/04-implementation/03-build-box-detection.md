@@ -1,5 +1,7 @@
 # Build Box Detection
 
+[Back to Plan](../PLAN.md)
+
 ## Goal
 
 Identify when a block is intended to be a rectangular ASCII wireframe box.

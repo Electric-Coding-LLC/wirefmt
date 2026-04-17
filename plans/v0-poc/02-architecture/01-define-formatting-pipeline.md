@@ -1,5 +1,7 @@
 # Define Formatting Pipeline
 
+[Back to Plan](../PLAN.md)
+
 ## Goal
 
 Specify the deterministic transformation pipeline from raw text to cleaned wireframe output.

@@ -1,5 +1,7 @@
 # Set Up Project Foundation
 
+[Back to Plan](../PLAN.md)
+
 ## Goal
 
 Establish the Bun and TypeScript project structure for CLI-first development.

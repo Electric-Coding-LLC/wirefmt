@@ -1,5 +1,7 @@
 # Define Error Handling And Output Rules
 
+[Back to Plan](../PLAN.md)
+
 ## Goal
 
 Make success, failure, and partial-formatting behavior predictable.

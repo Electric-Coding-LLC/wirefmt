@@ -1,5 +1,7 @@
 # Test Formatting Behavior
 
+[Back to Plan](../PLAN.md)
+
 ## Goal
 
 Prove that `wirefmt` produces stable, conservative output across common messy inputs.

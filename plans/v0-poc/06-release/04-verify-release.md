@@ -1,5 +1,7 @@
 # Verify Release
 
+[Back to Plan](../PLAN.md)
+
 ## Goal
 
 Confirm the released tool behaves the same as the tested build.

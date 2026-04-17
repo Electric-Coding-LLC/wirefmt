@@ -1,5 +1,7 @@
 # Add MCP Wrapper
 
+[Back to Plan](../PLAN.md)
+
 ## Goal
 
 Expose the formatter to agents without duplicating logic.

@@ -1,5 +1,7 @@
 # Define Release Scope
 
+[Back to Plan](../PLAN.md)
+
 ## Goal
 
 Define the smallest useful `v0-poc` release of `wirefmt` and lock the non-goals.

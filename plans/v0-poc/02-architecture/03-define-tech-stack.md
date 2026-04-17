@@ -1,5 +1,7 @@
 # Define Tech Stack
 
+[Back to Plan](../PLAN.md)
+
 ## Goal
 
 Choose a runtime and toolchain that fit a small, deterministic CLI and MCP tool.

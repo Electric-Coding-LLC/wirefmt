@@ -1,5 +1,7 @@
 # Ship CLI And MCP Tool
 
+[Back to Plan](../PLAN.md)
+
 ## Goal
 
 Publish the `v0-poc` release of `wirefmt`.
