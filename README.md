@@ -23,14 +23,21 @@ bun install
 Published package:
 
 ```sh
-bun install -g wirefmt
+bun install -g @electric_coding/wirefmt
+```
+
+Release helper:
+
+```sh
+bun run release -- patch
 ```
 
 Local tarball smoke-test flow:
 
 ```sh
 bun pm pack
-bun add ./wirefmt-0.1.0.tgz
+tarball="$(ls ./*.tgz)"
+bun add "$tarball"
 ./node_modules/.bin/wirefmt --version
 ```
 
@@ -163,6 +170,10 @@ Registered tool:
 
 - `wirefmt.format`
 
+MCP client wiring examples:
+
+- [docs/mcp.md](./docs/mcp.md)
+
 Input shape:
 
 ```json
@@ -226,3 +237,6 @@ problems without changing the input.
 - Published package contents are limited to source files and end-user docs.
 - A release-candidate tarball can be checked locally with `bun pm pack` before
   publishing.
+- Use `bun run release -- <patch|minor|major|x.y.z>` to bump the version, run
+  the local release gate, commit the version bump, and tag `v<version>`.
+- The release publish and tagging flow lives in [docs/release.md](./docs/release.md).
