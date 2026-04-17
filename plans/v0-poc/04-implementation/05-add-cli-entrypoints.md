@@ -1,5 +1,7 @@
 # Add CLI Entrypoints
 
+[Back to Plan](../PLAN.md)
+
 ## Goal
 
 Ship a usable local command that exposes the formatter cleanly.

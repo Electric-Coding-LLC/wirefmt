@@ -1,5 +1,7 @@
 # Build Normalization And Rendering
 
+[Back to Plan](../PLAN.md)
+
 ## Goal
 
 Turn detected box blocks into clean, aligned output while preserving user intent.

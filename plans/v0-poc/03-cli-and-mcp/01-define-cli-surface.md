@@ -1,5 +1,7 @@
 # Define CLI Surface
 
+[Back to Plan](../PLAN.md)
+
 ## Goal
 
 Define the command-line interface for formatting and optional linting.

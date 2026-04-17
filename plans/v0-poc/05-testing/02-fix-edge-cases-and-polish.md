@@ -1,5 +1,7 @@
 # Fix Edge Cases And Polish
 
+[Back to Plan](../PLAN.md)
+
 ## Goal
 
 Address failure cases discovered during testing without expanding the product scope carelessly.

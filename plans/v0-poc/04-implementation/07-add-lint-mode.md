@@ -1,5 +1,7 @@
 # Add Lint Mode
 
+[Back to Plan](../PLAN.md)
+
 ## Goal
 
 Report wireframe issues without rewriting content.

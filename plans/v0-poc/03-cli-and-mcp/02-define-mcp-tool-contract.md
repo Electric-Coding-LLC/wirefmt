@@ -1,5 +1,7 @@
 # Define MCP Tool Contract
 
+[Back to Plan](../PLAN.md)
+
 ## Goal
 
 Expose the formatter through MCP without creating a second formatting implementation.

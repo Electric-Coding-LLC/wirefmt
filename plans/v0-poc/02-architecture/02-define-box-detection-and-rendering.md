@@ -1,5 +1,7 @@
 # Define Box Detection And Rendering
 
+[Back to Plan](../PLAN.md)
+
 ## Goal
 
 Define how `wirefmt` recognizes intended boxes and how it re-renders them safely.
