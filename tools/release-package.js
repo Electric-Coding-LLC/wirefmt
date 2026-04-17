@@ -189,6 +189,8 @@ function getRepoNameWithOwner() {
 function readCiRunStatus(commitSha, defaultBranch, repoNameWithOwner) {
   const runsJson = readStdout("gh", [
     "api",
+    "-X",
+    "GET",
     `repos/${repoNameWithOwner}/actions/workflows/ci.yml/runs`,
     "-f",
     `head_sha=${commitSha}`,
