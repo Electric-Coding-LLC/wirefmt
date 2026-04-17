@@ -27,8 +27,8 @@ This `v0.2` release will be completed by working through these steps in order.
 
 | Step | Started | Completed |
 | --- | --- | --- |
-| [01-add-agent-fixture-coverage](04-testing/01-add-agent-fixture-coverage.md) | 2026-04-17 |  |
-| [02-verify-cli-and-mcp-parity](04-testing/02-verify-cli-and-mcp-parity.md) | 2026-04-17 |  |
+| [01-add-agent-fixture-coverage](04-testing/01-add-agent-fixture-coverage.md) | 2026-04-17 | 2026-04-17 |
+| [02-verify-cli-and-mcp-parity](04-testing/02-verify-cli-and-mcp-parity.md) | 2026-04-17 | 2026-04-17 |
 
 ## Release
 
