@@ -1,7 +1,7 @@
 # wirefmt
 
-`wirefmt` formats simple ASCII wireframe boxes and reports conservative lint
-findings for box-shaped text that looks malformed.
+`wirefmt` is a conservative ASCII wireframe formatter and linter with matching
+CLI and MCP surfaces for the same small box workflows.
 
 ## What It Does
 
@@ -9,6 +9,7 @@ findings for box-shaped text that looks malformed.
 - Preserves blank-line-separated non-box blocks around formatted boxes.
 - Uses one shared core engine for the CLI and MCP tool.
 - Leaves unsupported layouts unchanged instead of guessing.
+- Keeps `format` and `lint` available through both CLI and MCP.
 
 ## Current Prerequisite
 
@@ -281,10 +282,14 @@ problems without changing the input.
 
 ## Release Build Notes
 
-- The `v0-poc` package version is `0.1.0`.
+- `v0.2` release message: `wirefmt v0.2 makes formatting and linting available through matching CLI and MCP surfaces backed by one conservative box engine.`
+- The first `v0.2` release from the current `0.1.x` line should use a minor
+  bump to produce `0.2.0`.
 - Published package contents are limited to source files and end-user docs.
 - A release-candidate tarball can be checked locally with `bun pm pack` before
   publishing.
 - Use `bun run release -- <patch|minor|major|x.y.z>` to bump the version, run
   the local release gate, commit the version bump, and tag `v<version>`.
+- The release helper now verifies the packaged `wirefmt` CLI and
+  `wirefmt-mcp` server from a clean temp install before it creates a tag.
 - The release publish and tagging flow lives in [docs/release.md](./docs/release.md).

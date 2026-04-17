@@ -4,14 +4,14 @@ on:
   push:
     tags:
       - v*
-  workflow_dispatch:
 
 permissions:
+  actions: read
   contents: write
   id-token: write
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ github.ref_name }}
   cancel-in-progress: false
 
 env:
@@ -51,13 +51,14 @@ jobs:
           package_version="$(node -p "JSON.parse(require('fs').readFileSync('package.json', 'utf8')).version")"
           package_name="$(node -p "JSON.parse(require('fs').readFileSync('package.json', 'utf8')).name")"
           tag="v$package_version"
+          target_sha="$(git rev-parse "${GITHUB_REF_NAME}^{commit}")"
 
           if [[ ! "$package_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
             echo "package.json version is not valid semver: $package_version"
             exit 1
           fi
 
-          if [[ "${GITHUB_EVENT_NAME}" = "push" && "${GITHUB_REF_NAME}" != "$tag" ]]; then
+          if [[ "${GITHUB_REF_NAME}" != "$tag" ]]; then
             echo "tag ${GITHUB_REF_NAME} does not match package.json version tag $tag"
             exit 1
           fi
@@ -65,6 +66,32 @@ jobs:
           echo "package_name=$package_name" >> "$GITHUB_OUTPUT"
           echo "package_version=$package_version" >> "$GITHUB_OUTPUT"
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "target_sha=$target_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Require successful CI for tagged commit
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          target_sha="${{ steps.release.outputs.target_sha }}"
+
+          ci_conclusion="$(
+            gh api "repos/${{ github.repository }}/actions/workflows/ci.yml/runs" \
+              -f head_sha="$target_sha" \
+              -f event="push" \
+              -f branch="main" \
+              -f status="completed" \
+              -f per_page=1 \
+              --jq '.workflow_runs[0].conclusion // ""'
+          )"
+
+          if [[ "$ci_conclusion" != "success" ]]; then
+            echo "Expected successful CI for tagged commit $target_sha on main before release."
+            echo "Current CI conclusion: ${ci_conclusion:-<none>}"
+            exit 1
+          fi
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -150,6 +177,6 @@ jobs:
           fi
 
           gh release create "$tag" \
-            --target "$GITHUB_SHA" \
+            --target "${{ steps.release.outputs.target_sha }}" \
             --title "$tag" \
             --generate-notes

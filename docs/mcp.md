@@ -1,6 +1,8 @@
 # MCP Integration
 
-`wirefmt` ships a stdio MCP server through the `wirefmt-mcp` executable.
+`wirefmt` ships a stdio MCP server through the `wirefmt-mcp` executable. The
+`v0.2` agent-facing surface is intentionally small: `wirefmt.format` and
+`wirefmt.lint`.
 
 ## Prerequisite
 
