@@ -117,6 +117,7 @@ jobs:
           bun add "$GITHUB_WORKSPACE/$tarball"
 
           ./node_modules/.bin/wirefmt --version
+          ./node_modules/.bin/wirefmt-mcp --version
 
           actual_output="$(
             printf '+--+\n|x|\n+--+\n' | ./node_modules/.bin/wirefmt format
@@ -132,15 +133,83 @@ jobs:
             exit 1
           fi
 
-          set +e
-          timeout 2s ./node_modules/.bin/wirefmt-mcp
-          exit_code=$?
-          set -e
+          node --input-type=module - <<'EOF'
+          import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+          import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 
-          if [[ "$exit_code" != "0" && "$exit_code" != "124" ]]; then
-            echo "wirefmt-mcp exited unexpectedly with code $exit_code"
-            exit 1
-          fi
+          const client = new Client({
+            name: "wirefmt-release-smoke",
+            version: "0.0.0",
+          });
+          const transport = new StdioClientTransport({
+            command: "./node_modules/.bin/wirefmt-mcp",
+            cwd: process.cwd(),
+            stderr: "pipe",
+          });
+
+          function fail(message) {
+            throw new Error(message);
+          }
+
+          try {
+            await client.connect(transport);
+
+            const serverVersion = client.getServerVersion();
+            if (!serverVersion || serverVersion.name !== "wirefmt") {
+              fail("MCP server did not identify itself as wirefmt");
+            }
+
+            const toolList = await client.listTools();
+            const toolNames = toolList.tools.map((tool) => tool.name).sort();
+            const expectedToolNames = ["wirefmt.format", "wirefmt.lint"];
+            if (toolNames.join(",") !== expectedToolNames.join(",")) {
+              fail(
+                `unexpected MCP tool list: expected ${expectedToolNames.join(", ")}, received ${toolNames.join(", ")}`,
+              );
+            }
+
+            const formatResult = await client.callTool({
+              name: "wirefmt.format",
+              arguments: {
+                text: "+--+\n|x|\n+--+\n",
+              },
+            });
+
+            if (
+              !formatResult.structuredContent ||
+              formatResult.structuredContent.formattedText !==
+                "+---+\n| x |\n+---+\n" ||
+              formatResult.structuredContent.changed !== true
+            ) {
+              fail("unexpected MCP format result");
+            }
+
+            const lintResult = await client.callTool({
+              name: "wirefmt.lint",
+              arguments: {
+                text: "+--+\n|x\n+--+\n",
+                source: "fixture.txt",
+              },
+            });
+
+            const issues = lintResult.structuredContent?.issues;
+            if (!Array.isArray(issues) || issues.length !== 1) {
+              fail("unexpected MCP lint result");
+            }
+
+            const [issue] = issues;
+            if (
+              issue.code !== "broken-border" ||
+              issue.message !== "Content row is missing a closing edge." ||
+              issue.source !== "fixture.txt" ||
+              issue.lineOrBlock !== "2"
+            ) {
+              fail("unexpected MCP lint issue payload");
+            }
+          } finally {
+            await client.close();
+          }
+          EOF
 
           popd >/dev/null
 

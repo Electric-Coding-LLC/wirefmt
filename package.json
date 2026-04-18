@@ -35,9 +35,12 @@
   },
   "scripts": {
     "check": "bun run typecheck && bun run lint && bun test",
+    "cli": "bun run src/cli/bin.ts",
     "format": "biome format --write .",
     "lint": "biome check .",
-    "mcp": "bun run src/mcp/bin.ts",
+    "mcp:help": "bun run src/mcp/bin.ts --help",
+    "mcp:serve": "bun run src/mcp/bin.ts",
+    "mcp:version": "bun run src/mcp/bin.ts --version",
     "pack:dry-run": "bun pm pack --dry-run",
     "release": "bun tools/release-package.js",
     "test": "bun test",

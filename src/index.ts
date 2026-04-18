@@ -7,6 +7,7 @@ export type {
 } from "./mcp";
 export {
   createWirefmtMcpServer,
+  runMcpCli,
   runWirefmtFormatTool,
   runWirefmtLintTool,
 } from "./mcp";
