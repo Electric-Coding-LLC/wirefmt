@@ -5,11 +5,12 @@ archived as a single folder when the release is complete.
 
 ## Active Plan
 
-- [`v0.2`](plans/v0.2/PLAN.md)
+- [`v0.3`](plans/v0.3/PLAN.md)
 
 ## Completed Plans
 
 - [`v0-poc`](plans/v0-poc/PLAN.md)
+- [`v0.2`](plans/v0.2/PLAN.md)
 
 ## Archive Strategy
 
