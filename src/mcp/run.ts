@@ -35,7 +35,7 @@ const defaultRuntime: McpRuntime = {
 export async function runMcpCli(
   argv: readonly string[],
   runtime: McpRuntime = defaultRuntime,
-): Promise<number> {
+): Promise<number | undefined> {
   if (argv.length === 0) {
     if (runtime.isInteractiveSession()) {
       runtime.writeStderr(
@@ -48,7 +48,7 @@ export async function runMcpCli(
       runtime.writeStderr("wirefmt-mcp stdio server is running.\n");
     }
     await runtime.startServer();
-    return 0;
+    return undefined;
   }
 
   if (argv.length === 1 && argv[0] === "--help") {

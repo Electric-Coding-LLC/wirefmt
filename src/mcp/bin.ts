@@ -3,4 +3,6 @@
 import { runMcpCli } from "./run";
 
 const exitCode = await runMcpCli(process.argv.slice(2));
-process.exit(exitCode);
+if (exitCode !== undefined) {
+  process.exit(exitCode);
+}

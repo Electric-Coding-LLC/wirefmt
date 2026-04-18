@@ -9,7 +9,7 @@ describe("runMcpCli", () => {
 
     const exitCode = await runMcpCli([], runtime);
 
-    expect(exitCode).toBe(0);
+    expect(exitCode).toBeUndefined();
     expect(runtime.serverStarted).toBe(true);
     expect(runtime.stdout).toBe("");
     expect(runtime.stderr).toBe("");
@@ -22,7 +22,7 @@ describe("runMcpCli", () => {
 
     const exitCode = await runMcpCli([], runtime);
 
-    expect(exitCode).toBe(0);
+    expect(exitCode).toBeUndefined();
     expect(runtime.serverStarted).toBe(true);
     expect(runtime.stdout).toBe("");
     expect(runtime.stderr).toBe("wirefmt-mcp stdio server is running.\n");
