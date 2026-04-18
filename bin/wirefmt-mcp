@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 
-import { startWirefmtMcpServer } from "../src/mcp/server";
+import { runMcpCli } from "../src/mcp/run";
 
-await startWirefmtMcpServer();
+const exitCode = await runMcpCli(process.argv.slice(2));
+process.exit(exitCode);
