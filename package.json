@@ -1,6 +1,6 @@
 {
   "name": "@electric_coding/wirefmt",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Conservative ASCII wireframe formatter and linter with matching CLI and MCP surfaces.",
   "keywords": [
     "ascii",
