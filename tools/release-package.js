@@ -293,6 +293,14 @@ if [[ "$help_output" != *"wirefmt format"* ]] || [[ "$help_output" != *"wirefmt 
   exit 1
 fi
 
+mcp_version="$(./node_modules/.bin/wirefmt-mcp --version)"
+if [[ "$mcp_version" != "${version}" ]]; then
+  echo "unexpected wirefmt-mcp version"
+  echo "expected: ${version}"
+  echo "actual: $mcp_version"
+  exit 1
+fi
+
 actual_output="$(printf '+--+\\n|x|\\n+--+\\n' | ./node_modules/.bin/wirefmt format)"
 expected_output=$'+---+\\n| x |\\n+---+'
 if [[ "$actual_output" != "$expected_output" ]]; then

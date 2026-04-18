@@ -52,13 +52,13 @@ Installed executables:
 You can run the CLI directly from this checkout:
 
 ```sh
-bun run src/cli/bin.ts --help
+bun run cli --help
 ```
 
 Basic formatting from stdin:
 
 ```sh
-printf '+--+\n|x|\n+--+\n' | bun run src/cli/bin.ts format
+printf '+--+\n|x|\n+--+\n' | bun run cli format
 ```
 
 Output:
@@ -72,13 +72,13 @@ Output:
 Formatting a file:
 
 ```sh
-bun run src/cli/bin.ts format ./example.txt
+bun run cli format ./example.txt
 ```
 
 Formatting with an explicit outer width and padding:
 
 ```sh
-printf '+---+\n|x|\n+---+\n' | bun run src/cli/bin.ts format --width 10 --pad 2
+printf '+---+\n|x|\n+---+\n' | bun run cli format --width 10 --pad 2
 ```
 
 Output:
@@ -136,7 +136,7 @@ Notes:
 Example:
 
 ```sh
-printf '+--+\n|x\n+--+\n' | bun run src/cli/bin.ts lint
+printf '+--+\n|x\n+--+\n' | bun run cli lint
 ```
 
 Output:
@@ -155,16 +155,29 @@ Current issue codes:
 
 ## MCP Usage
 
-Start the MCP server over stdio:
+For direct checks from this checkout:
 
 ```sh
-bun run src/mcp/bin.ts
+bun run mcp:help
+bun run mcp:version
 ```
 
-After installation, you can also run:
+To launch the stdio server for an MCP client from this checkout:
+
+```sh
+bun run mcp:serve
+```
+
+After installation, an MCP client can also run:
 
 ```sh
 wirefmt-mcp
+```
+
+Version check after installation:
+
+```sh
+wirefmt-mcp --version
 ```
 
 Registered tools:
