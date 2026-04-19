@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+env:
+  BUN_VERSION: 1.3.11
+  NODE_VERSION: 24
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -20,7 +24,12 @@ jobs:
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.3.11
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -28,116 +37,20 @@ jobs:
       - name: Run checks
         run: bun run check
 
-      - name: Pack release tarball
-        run: bun pm pack
+      - name: Build packaged entrypoints
+        run: bun run build
 
       - name: Check npm package contents
-        run: npm pack --dry-run
+        run: bun run pack:dry-run
 
       - name: Smoke-test packed install
         shell: bash
         run: |
           set -euo pipefail
 
-          tarball="$(ls ./*.tgz)"
-          tmp_dir="$(mktemp -d)"
-
-          pushd "$tmp_dir" >/dev/null
-          bun add "$GITHUB_WORKSPACE/$tarball"
-
-          ./node_modules/.bin/wirefmt --version
-          ./node_modules/.bin/wirefmt-mcp --version
-
-          actual_output="$(
-            printf '+--+\n|x|\n+--+\n' | ./node_modules/.bin/wirefmt format
+          mkdir -p .tmp-pack
+          tarball="$(
+            npm pack --json --pack-destination .tmp-pack --ignore-scripts \
+              | node -e 'const fs = require("fs"); const input = fs.readFileSync(0, "utf8"); const match = input.match(/"filename"\s*:\s*"([^"]+\.tgz)"/); if (!match) process.exit(1); console.log(match[1]);'
           )"
-          expected_output=$'+---+\n| x |\n+---+'
-
-          if [[ "$actual_output" != "$expected_output" ]]; then
-            echo "unexpected wirefmt output"
-            echo "expected:"
-            printf '%s\n' "$expected_output"
-            echo "actual:"
-            printf '%s\n' "$actual_output"
-            exit 1
-          fi
-
-          node --input-type=module - <<'EOF'
-          import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-          import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-
-          const client = new Client({
-            name: "wirefmt-ci-smoke",
-            version: "0.0.0",
-          });
-          const transport = new StdioClientTransport({
-            command: "./node_modules/.bin/wirefmt-mcp",
-            cwd: process.cwd(),
-            stderr: "pipe",
-          });
-
-          function fail(message) {
-            throw new Error(message);
-          }
-
-          try {
-            await client.connect(transport);
-
-            const serverVersion = client.getServerVersion();
-            if (!serverVersion || serverVersion.name !== "wirefmt") {
-              fail("MCP server did not identify itself as wirefmt");
-            }
-
-            const toolList = await client.listTools();
-            const toolNames = toolList.tools.map((tool) => tool.name).sort();
-            const expectedToolNames = ["wirefmt.format", "wirefmt.lint"];
-            if (toolNames.join(",") !== expectedToolNames.join(",")) {
-              fail(
-                `unexpected MCP tool list: expected ${expectedToolNames.join(", ")}, received ${toolNames.join(", ")}`,
-              );
-            }
-
-            const formatResult = await client.callTool({
-              name: "wirefmt.format",
-              arguments: {
-                text: "+--+\n|x|\n+--+\n",
-              },
-            });
-
-            if (
-              !formatResult.structuredContent ||
-              formatResult.structuredContent.formattedText !==
-                "+---+\n| x |\n+---+\n" ||
-              formatResult.structuredContent.changed !== true
-            ) {
-              fail("unexpected MCP format result");
-            }
-
-            const lintResult = await client.callTool({
-              name: "wirefmt.lint",
-              arguments: {
-                text: "+--+\n|x\n+--+\n",
-                source: "fixture.txt",
-              },
-            });
-
-            const issues = lintResult.structuredContent?.issues;
-            if (!Array.isArray(issues) || issues.length !== 1) {
-              fail("unexpected MCP lint result");
-            }
-
-            const [issue] = issues;
-            if (
-              issue.code !== "broken-border" ||
-              issue.message !== "Content row is missing a closing edge." ||
-              issue.source !== "fixture.txt" ||
-              issue.lineOrBlock !== "2"
-            ) {
-              fail("unexpected MCP lint issue payload");
-            }
-          } finally {
-            await client.close();
-          }
-          EOF
-
-          popd >/dev/null
+          node tools/smoke-packed-install.js ".tmp-pack/$tarball"

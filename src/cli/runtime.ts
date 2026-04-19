@@ -1,4 +1,4 @@
-import { Buffer } from "node:buffer";
+import { readFile } from "node:fs/promises";
 
 export interface CliRuntime {
   readFile(path: string): Promise<string>;
@@ -9,7 +9,7 @@ export interface CliRuntime {
 
 export const defaultRuntime: CliRuntime = {
   async readFile(path) {
-    return Bun.file(path).text();
+    return readFile(path, "utf8");
   },
   async readStdin() {
     const chunks: Buffer[] = [];

@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync } from "node:fs";
 import path from "node:path";
 
 const repoRoot = process.cwd();
@@ -265,138 +265,34 @@ async function waitForSuccessfulCi(commitSha, defaultBranch) {
 }
 
 function smokeTestTarball(version) {
-  const tarballName = `electric_coding-wirefmt-${version}.tgz`;
-  const script = `
-set -euo pipefail
-find . -maxdepth 1 -name '*.tgz' -delete
-bun pm pack
-tmp_dir="$(mktemp -d)"
-trap 'rm -rf "$tmp_dir"; rm -f "$PWD/${tarballName}"' EXIT
-bun add --cwd "$tmp_dir" "$PWD/${tarballName}"
-cd "$tmp_dir"
+  const packDir = path.join(repoRoot, ".tmp-release-pack");
 
-test -x ./node_modules/.bin/wirefmt
-test -x ./node_modules/.bin/wirefmt-mcp
+  rmSync(packDir, { recursive: true, force: true });
+  mkdirSync(packDir, { recursive: true });
 
-actual_version="$(./node_modules/.bin/wirefmt --version)"
-if [[ "$actual_version" != "${version}" ]]; then
-  echo "unexpected wirefmt version"
-  echo "expected: ${version}"
-  echo "actual: $actual_version"
-  exit 1
-fi
-
-help_output="$(./node_modules/.bin/wirefmt --help)"
-if [[ "$help_output" != *"wirefmt format"* ]] || [[ "$help_output" != *"wirefmt lint"* ]]; then
-  echo "wirefmt help output is missing the expected commands"
-  printf '%s\n' "$help_output"
-  exit 1
-fi
-
-mcp_version="$(./node_modules/.bin/wirefmt-mcp --version)"
-if [[ "$mcp_version" != "${version}" ]]; then
-  echo "unexpected wirefmt-mcp version"
-  echo "expected: ${version}"
-  echo "actual: $mcp_version"
-  exit 1
-fi
-
-actual_output="$(printf '+--+\\n|x|\\n+--+\\n' | ./node_modules/.bin/wirefmt format)"
-expected_output=$'+---+\\n| x |\\n+---+'
-if [[ "$actual_output" != "$expected_output" ]]; then
-  echo "unexpected wirefmt output"
-  echo "expected:"
-  printf '%s\\n' "$expected_output"
-  echo "actual:"
-  printf '%s\\n' "$actual_output"
-  exit 1
-fi
-
-node --input-type=module - "${version}" <<'EOF'
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-
-const expectedVersion = process.argv[2];
-const client = new Client({
-  name: "wirefmt-release-smoke",
-  version: "0.0.0",
-});
-const transport = new StdioClientTransport({
-  command: "./node_modules/.bin/wirefmt-mcp",
-  cwd: process.cwd(),
-  stderr: "pipe",
-});
-
-function fail(message) {
-  throw new Error(message);
-}
-
-try {
-  await client.connect(transport);
-
-  const serverVersion = client.getServerVersion();
-  if (!serverVersion || serverVersion.name !== "wirefmt") {
-    fail("MCP server did not identify itself as wirefmt");
-  }
-
-  if (serverVersion.version !== expectedVersion) {
-    fail(
-      \`unexpected MCP server version: expected \${expectedVersion}, received \${serverVersion.version}\`,
+  try {
+    const packOutput = readStdout("npm", [
+      "pack",
+      "--json",
+      "--pack-destination",
+      packDir,
+      "--ignore-scripts",
+    ]);
+    const tarballName = packOutput.match(
+      /"filename"\s*:\s*"([^"]+\.tgz)"/,
+    )?.[1];
+    if (tarballName === undefined) {
+      fail("npm pack did not return a tarball filename");
+    }
+    const tarballPath = path.join(packDir, tarballName);
+    run(
+      "node",
+      ["tools/smoke-packed-install.js", tarballPath, version],
+      repoRoot,
     );
+  } finally {
+    rmSync(packDir, { recursive: true, force: true });
   }
-
-  const toolList = await client.listTools();
-  const toolNames = toolList.tools.map((tool) => tool.name).sort();
-  const expectedToolNames = ["wirefmt.format", "wirefmt.lint"];
-  if (toolNames.join(",") !== expectedToolNames.join(",")) {
-    fail(
-      \`unexpected MCP tool list: expected \${expectedToolNames.join(", ")}, received \${toolNames.join(", ")}\`,
-    );
-  }
-
-  const formatResult = await client.callTool({
-    name: "wirefmt.format",
-    arguments: {
-      text: "+--+\\n|x|\\n+--+\\n",
-    },
-  });
-
-  if (
-    !formatResult.structuredContent ||
-    formatResult.structuredContent.formattedText !== "+---+\\n| x |\\n+---+\\n" ||
-    formatResult.structuredContent.changed !== true
-  ) {
-    fail("unexpected MCP format result");
-  }
-
-  const lintResult = await client.callTool({
-    name: "wirefmt.lint",
-    arguments: {
-      text: "+--+\\n|x\\n+--+\\n",
-      source: "fixture.txt",
-    },
-  });
-
-  const issues = lintResult.structuredContent?.issues;
-  if (!Array.isArray(issues) || issues.length === 0) {
-    fail("unexpected MCP lint result");
-  }
-
-  const brokenBorderIssue = issues.find((issue) => issue.code === "broken-border");
-  if (
-    !brokenBorderIssue ||
-    brokenBorderIssue.source !== "fixture.txt" ||
-    brokenBorderIssue.lineOrBlock !== "2"
-  ) {
-    fail("MCP lint result did not preserve the documented broken-border finding");
-  }
-} finally {
-  await client.close();
-}
-EOF
-`;
-
-  run("bash", ["-lc", script], repoRoot);
 }
 
 const options = parseArgs(process.argv.slice(2));
@@ -414,8 +310,11 @@ const releaseTag = `v${packageJson.version}`;
 console.log("› bun run check");
 run("bun", ["run", "check"]);
 
+console.log("› bun run build");
+run("bun", ["run", "build"]);
+
 console.log("› npm pack --dry-run");
-run("npm", ["pack", "--dry-run"]);
+run("npm", ["pack", "--dry-run", "--ignore-scripts"]);
 
 console.log("› smoke-test packed install");
 smokeTestTarball(packageJson.version);

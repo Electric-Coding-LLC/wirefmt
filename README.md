@@ -11,20 +11,25 @@ CLI and MCP surfaces for the same small box workflows.
 - Leaves unsupported layouts unchanged instead of guessing.
 - Keeps `format` and `lint` available through both CLI and MCP.
 
-## Current Prerequisite
+## Runtime Model
 
-`wirefmt` currently targets Bun and ships Bun-based executables.
-
-```sh
-bun install
-```
+- Installed package users need Node.js `>=18.17.0`.
+- Contributors and release maintainers still use Bun `>=1.3.11`.
 
 ## Install
 
-Published package:
+Published package for end users:
 
 ```sh
-bun install -g @electric_coding/wirefmt
+npm install -g @electric_coding/wirefmt
+wirefmt --version
+wirefmt-mcp --version
+```
+
+Contributor setup from this checkout:
+
+```sh
+bun install
 ```
 
 Release helper:
@@ -36,10 +41,12 @@ bun run release -- patch
 Local tarball smoke-test flow:
 
 ```sh
-bun pm pack
-tarball="$(ls ./*.tgz)"
-bun add "$tarball"
-./node_modules/.bin/wirefmt --version
+bun run build
+tarball="$(npm pack --json | node -e 'const fs = require("fs"); const input = fs.readFileSync(0, "utf8"); const match = input.match(/"filename"\\s*:\\s*"([^"]+\\.tgz)"/); if (!match) process.exit(1); console.log(match[1]);')"
+tmp_dir="$(mktemp -d)"
+npm install --prefix "$tmp_dir" "$PWD/$tarball"
+"$tmp_dir/node_modules/.bin/wirefmt" --version
+"$tmp_dir/node_modules/.bin/wirefmt-mcp" --version
 ```
 
 Installed executables:
@@ -174,10 +181,11 @@ After installation, an MCP client can also run:
 wirefmt-mcp
 ```
 
-Version check after installation:
+The installed `wirefmt-mcp` wrapper launches the bundled `dist/` server through
+Node. For repo-local development, keep using:
 
 ```sh
-wirefmt-mcp --version
+bun run mcp:serve
 ```
 
 Registered tools:
@@ -242,7 +250,15 @@ Notes:
 
 ## Codex Setup
 
-To use `wirefmt` from Codex, wire up the local MCP server first. The shipped
+For an installed package, point Codex at the shipped executable:
+
+```toml
+[mcp_servers.wirefmt]
+enabled = true
+command = "wirefmt-mcp"
+```
+
+For repo-local development, wire up the checkout directly with Bun. The shipped
 MCP tools are enough on their own; a custom skill is optional.
 
 Add this to `~/.codex/config.toml`:
@@ -295,14 +311,13 @@ problems without changing the input.
 
 ## Release Build Notes
 
-- `v0.2` release message: `wirefmt v0.2 makes formatting and linting available through matching CLI and MCP surfaces backed by one conservative box engine.`
-- The first `v0.2` release from the current `0.1.x` line should use a minor
-  bump to produce `0.2.0`.
-- Published package contents are limited to source files and end-user docs.
-- A release-candidate tarball can be checked locally with `bun pm pack` before
-  publishing.
+- `v0.3` release message: `wirefmt v0.3 ships portable Node-launched CLI and MCP entrypoints so installed users no longer need Bun in the default path.`
+- Published package contents are limited to `bin/`, bundled `dist/`, and the
+  top-level package docs.
+- A release-candidate tarball can be checked locally with `bun run build`
+  followed by `npm pack --json --ignore-scripts` before publishing.
 - Use `bun run release -- <patch|minor|major|x.y.z>` to bump the version, run
   the local release gate, commit the version bump, and tag `v<version>`.
-- The release helper now verifies the packaged `wirefmt` CLI and
-  `wirefmt-mcp` server from a clean temp install before it creates a tag.
+- The release helper verifies the packaged `wirefmt` CLI and `wirefmt-mcp`
+  server from a clean npm-installed temp directory before it creates a tag.
 - The release publish and tagging flow lives in [docs/release.md](./docs/release.md).
