@@ -1,6 +1,6 @@
 # Define CLI Surface
 
-[Back to Plan](../PLAN.md)
+[Back to Execution Map](../EXECMAP.md)
 
 ## Goal
 

@@ -1,6 +1,6 @@
 # Package CLI And MCP Binaries For Portable Install
 
-[Back to Plan](../PLAN.md)
+[Back to Execution Map](../EXECMAP.md)
 
 ## Goal
 

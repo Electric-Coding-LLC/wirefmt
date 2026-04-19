@@ -20,6 +20,7 @@ This guide covers the `v0.3` release flow for `wirefmt`.
 - Node.js `>=18.17.0`
 - npm publish access for `@electric_coding/wirefmt`
 - Push access to `origin`
+- A clean git worktree
 
 ## Preflight
 
@@ -74,6 +75,7 @@ The helper checks all of these before it creates the release commit:
   - Node wrappers in `bin/`
   - bundled runtime in `dist/`
   - no installed `src/` runtime dependency
+- a clean git worktree with no staged or unstaged changes
 
 ## Build And Smoke-Test The Tarball
 

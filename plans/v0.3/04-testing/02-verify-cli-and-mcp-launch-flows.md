@@ -1,6 +1,6 @@
 # Verify CLI And MCP Launch Flows
 
-[Back to Plan](../PLAN.md)
+[Back to Execution Map](../EXECMAP.md)
 
 ## Goal
 

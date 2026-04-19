@@ -1,6 +1,6 @@
 # Ship CLI And MCP Tool
 
-[Back to Plan](../PLAN.md)
+[Back to Execution Map](../EXECMAP.md)
 
 ## Goal
 

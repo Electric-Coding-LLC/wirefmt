@@ -279,6 +279,13 @@ Use `wirefmt.lint` to inspect suspected problems without changing the input.
 Do not fall back to the CLI unless the MCP server is unavailable.
 ```
 
+This repo also tracks a repo-local skill template at
+[`skills/wirefmt/SKILL.md`](https://github.com/Electric-Coding-LLC/wirefmt/blob/main/skills/wirefmt/SKILL.md)
+with the matching agent prompt in
+[`skills/wirefmt/agents/openai.yaml`](https://github.com/Electric-Coding-LLC/wirefmt/blob/main/skills/wirefmt/agents/openai.yaml).
+If you keep a separate shared skills repo, copy from those repo files so the
+`wirefmt` instructions stay versioned with the tool.
+
 ## Formatting Guarantees
 
 - `width` is interpreted as the full outer width, including both borders.

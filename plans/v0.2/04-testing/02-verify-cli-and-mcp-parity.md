@@ -1,6 +1,6 @@
 # Verify CLI And MCP Parity
 
-[Back to Plan](../PLAN.md)
+[Back to Execution Map](../EXECMAP.md)
 
 ## Goal
 

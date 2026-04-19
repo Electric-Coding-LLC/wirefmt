@@ -1,6 +1,6 @@
 # Align CLI And MCP Output
 
-[Back to Plan](../PLAN.md)
+[Back to Execution Map](../EXECMAP.md)
 
 ## Goal
 
