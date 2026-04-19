@@ -116,6 +116,10 @@ checkout server shown above. A separate skill is optional; if you keep agent
 instructions, have them prefer `wirefmt.format` for formatting and
 `wirefmt.lint` for structured findings.
 
+This repo keeps the canonical skill text in
+[`skills/wirefmt/SKILL.md`](../skills/wirefmt/SKILL.md) plus the matching agent
+prompt in [`skills/wirefmt/agents/openai.yaml`](../skills/wirefmt/agents/openai.yaml).
+
 ## Notes
 
 - The MCP server uses the same shared formatter and lint engine as the CLI.

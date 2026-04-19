@@ -1,6 +1,6 @@
 # Prepare v0.3 Release
 
-[Back to Plan](../PLAN.md)
+[Back to Execution Map](../EXECMAP.md)
 
 ## Goal
 
@@ -9,7 +9,7 @@ without changing the conservative formatting product boundary.
 
 ## Release Message
 
-`wirefmt v0.3 makes the shipped CLI and MCP entrypoints easier to install and run, while keeping the same small conservative box engine.`
+`wirefmt v0.3 ships portable Node-launched CLI and MCP entrypoints so installed users no longer need Bun in the default path.`
 
 ## Release Story Guardrails
 
@@ -28,6 +28,17 @@ without changing the conservative formatting product boundary.
 - Update release notes and docs to reflect the `v0.3` portability theme.
 - Verify the published package shape matches the documented install contract.
 - Confirm the release still reads as one small product improvement.
+
+## Verification Notes
+
+- `bun run check` passes.
+- `bun run build` passes.
+- `bun run pack:dry-run` shows the expected published package shape:
+  - Node wrappers in `bin/`
+  - bundled runtime in `dist/`
+  - top-level package docs only
+- A packed tarball installs cleanly through npm and passes
+  `node tools/smoke-packed-install.js`.
 
 ## Exit Criteria
 

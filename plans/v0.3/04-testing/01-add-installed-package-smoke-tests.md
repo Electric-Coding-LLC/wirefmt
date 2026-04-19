@@ -1,6 +1,6 @@
 # Add Installed Package Smoke Tests
 
-[Back to Plan](../PLAN.md)
+[Back to Execution Map](../EXECMAP.md)
 
 ## Goal
 

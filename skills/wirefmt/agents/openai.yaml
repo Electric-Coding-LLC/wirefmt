@@ -1,0 +1,4 @@
+interface:
+  display_name: "Wirefmt"
+  short_description: "Format and lint simple ASCII wireframe boxes"
+  default_prompt: "Use wirefmt to clean up or lint this ASCII box, preferring the MCP formatter and using the CLI for lint findings."
