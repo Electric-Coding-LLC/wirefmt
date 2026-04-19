@@ -1,6 +1,3 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
-import { runCli } from "../src/cli/run";
-
-const exitCode = await runCli(process.argv.slice(2));
-process.exit(exitCode);
+import "../dist/cli/bin.js";

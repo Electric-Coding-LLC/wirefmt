@@ -1,21 +1,20 @@
 # MCP Integration
 
 `wirefmt` ships a stdio MCP server through the `wirefmt-mcp` executable. The
-`v0.2` agent-facing surface is intentionally small: `wirefmt.format` and
+`v0.3` agent-facing surface is intentionally small: `wirefmt.format` and
 `wirefmt.lint`.
 
-## Prerequisite
+## Runtime Prerequisites
 
-Install Bun first:
+Installed-package users need Node.js `>=18.17.0`.
 
-```sh
-bun install
-```
+Contributors running the server directly from this checkout still need Bun
+`>=1.3.11`.
 
 For a published install:
 
 ```sh
-bun install -g @electric_coding/wirefmt
+npm install -g @electric_coding/wirefmt
 ```
 
 ## Global Install Configuration
@@ -103,9 +102,19 @@ The server registers two tools:
 
 ## Codex Note
 
-For Codex, point `~/.codex/config.toml` at the same stdio server. A separate
-skill is optional; if you keep agent instructions, have them prefer
-`wirefmt.format` for formatting and `wirefmt.lint` for structured findings.
+For Codex, prefer the installed executable when you want the same runtime path
+users get from npm:
+
+```toml
+[mcp_servers.wirefmt]
+enabled = true
+command = "wirefmt-mcp"
+```
+
+For repo-local development, point `~/.codex/config.toml` at the Bun-launched
+checkout server shown above. A separate skill is optional; if you keep agent
+instructions, have them prefer `wirefmt.format` for formatting and
+`wirefmt.lint` for structured findings.
 
 ## Notes
 

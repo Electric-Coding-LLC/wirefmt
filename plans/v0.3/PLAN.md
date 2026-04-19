@@ -19,16 +19,16 @@ This `v0.3` release will be completed by working through these steps in order.
 
 | Step | Started | Completed |
 | --- | --- | --- |
-| [01-decouple-shipped-entrypoints-from-bun-only-launch](03-implementation/01-decouple-shipped-entrypoints-from-bun-only-launch.md) |  |  |
-| [02-package-cli-and-mcp-binaries-for-portable-install](03-implementation/02-package-cli-and-mcp-binaries-for-portable-install.md) |  |  |
-| [03-update-docs-and-release-tooling-for-portable-installs](03-implementation/03-update-docs-and-release-tooling-for-portable-installs.md) |  |  |
+| [01-decouple-shipped-entrypoints-from-bun-only-launch](03-implementation/01-decouple-shipped-entrypoints-from-bun-only-launch.md) | 2026-04-18 | 2026-04-18 |
+| [02-package-cli-and-mcp-binaries-for-portable-install](03-implementation/02-package-cli-and-mcp-binaries-for-portable-install.md) | 2026-04-18 | 2026-04-18 |
+| [03-update-docs-and-release-tooling-for-portable-installs](03-implementation/03-update-docs-and-release-tooling-for-portable-installs.md) | 2026-04-18 | 2026-04-18 |
 
 ## Testing
 
 | Step | Started | Completed |
 | --- | --- | --- |
-| [01-add-installed-package-smoke-tests](04-testing/01-add-installed-package-smoke-tests.md) |  |  |
-| [02-verify-cli-and-mcp-launch-flows](04-testing/02-verify-cli-and-mcp-launch-flows.md) |  |  |
+| [01-add-installed-package-smoke-tests](04-testing/01-add-installed-package-smoke-tests.md) | 2026-04-18 | 2026-04-18 |
+| [02-verify-cli-and-mcp-launch-flows](04-testing/02-verify-cli-and-mcp-launch-flows.md) | 2026-04-18 | 2026-04-18 |
 
 ## Release
 
@@ -42,6 +42,11 @@ This `v0.3` release will be completed by working through these steps in order.
 - `v0.3` is aimed at making the shipped package easier to install and run.
 - Theme: remove avoidable adoption friction before broadening layout scope.
 - Scope and product-contract planning for `v0.3` are complete.
-- Phase 4 testing docs are aligned with the Node-installed package direction.
-- The testing-doc alignment chunk passed local check, pack, and smoke-test verification on 2026-04-18.
-- Implementation, testing, and release docs are drafted, but those workstreams have not started yet.
+- Phase 3 implementation is complete:
+  - shipped `bin/` wrappers are Node-launched
+  - published runtime now comes from bundled `dist/`
+  - installed CLI file reads no longer depend on `Bun.file`
+- Phase 4 testing work is complete:
+  - CI and release flows now smoke-test an npm-installed tarball
+  - shared packed-install verification covers CLI, MCP, and package layout
+- Release preparation is the remaining open workstream for `v0.3`.
