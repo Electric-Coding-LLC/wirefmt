@@ -37,6 +37,11 @@ export function analyzeWireframeBlock(
     return passthrough(block);
   }
 
+  const adjacentFrame = detectSupportedAdjacentSiblingFrame(observed);
+  if (adjacentFrame !== undefined) {
+    return analyzeSupportedAdjacentSiblingBoxes(block, adjacentFrame, options);
+  }
+
   if (observed.some((line) => line.pluses.length > 2)) {
     return unsupportedLayout(
       block,
@@ -201,6 +206,32 @@ export function analyzeWireframeBlock(
   };
 }
 
+function analyzeSupportedAdjacentSiblingBoxes(
+  block: WireframeBlock,
+  frame: SupportedAdjacentSiblingFrame,
+  options: FormatOptions,
+): AnalyzedBlock {
+  const leftBlock: WireframeBlock = {
+    ...block,
+    lines: block.lines.map((line) => line.slice(0, frame.splitStart)),
+  };
+  const rightBlock: WireframeBlock = {
+    ...block,
+    lines: block.lines.map((line) => line.slice(frame.splitEnd)),
+  };
+
+  const leftAnalysis = analyzeWireframeBlock(leftBlock, options);
+  const rightAnalysis = analyzeWireframeBlock(rightBlock, options);
+
+  return {
+    lines: leftAnalysis.lines.map((line, index) => {
+      return `${line}${rightAnalysis.lines[index] ?? ""}`;
+    }),
+    warnings: [...leftAnalysis.warnings, ...rightAnalysis.warnings],
+    issues: dedupeIssues([...leftAnalysis.issues, ...rightAnalysis.issues]),
+  };
+}
+
 function collectEdgeCandidates(
   lines: readonly ObservedLine[],
 ): { readonly leftEdge: number; readonly rightEdge: number } | undefined {
@@ -235,6 +266,133 @@ function collectEdgeCandidates(
   }
 
   return { leftEdge, rightEdge };
+}
+
+interface SupportedAdjacentSiblingFrame {
+  readonly splitStart: number;
+  readonly splitEnd: number;
+}
+
+function detectSupportedAdjacentSiblingFrame(
+  lines: readonly ObservedLine[],
+): SupportedAdjacentSiblingFrame | undefined {
+  const borderRows = lines
+    .map((line, index) => {
+      return { line, index };
+    })
+    .filter(({ line }) => isTwoBoxBorderLikeLine(line));
+
+  if (borderRows.length < 2) {
+    return undefined;
+  }
+
+  const topBorder = borderRows[0];
+  const bottomBorder = borderRows.at(-1);
+  if (
+    topBorder === undefined ||
+    bottomBorder === undefined ||
+    topBorder.index === bottomBorder.index ||
+    topBorder.index + 1 === bottomBorder.index ||
+    !samePositions(topBorder.line.pluses, bottomBorder.line.pluses)
+  ) {
+    return undefined;
+  }
+
+  const [leftEdge, leftBoxRight, rightBoxLeft, rightEdge] =
+    topBorder.line.pluses;
+  if (
+    leftEdge === undefined ||
+    leftBoxRight === undefined ||
+    rightBoxLeft === undefined ||
+    rightEdge === undefined ||
+    rightBoxLeft - leftBoxRight !== 2
+  ) {
+    return undefined;
+  }
+
+  for (const line of lines) {
+    if (
+      !hasWhitespaceOnlyPrefix(line.raw, leftEdge) ||
+      !hasWhitespaceOnlySuffix(line.raw, rightEdge)
+    ) {
+      return undefined;
+    }
+  }
+
+  for (const [index, line] of lines.entries()) {
+    if (index === topBorder.index || index === bottomBorder.index) {
+      if (
+        !isTwoBoxBorderLikeLine(line) ||
+        !samePositions(line.pluses, topBorder.line.pluses)
+      ) {
+        return undefined;
+      }
+
+      continue;
+    }
+
+    if (
+      line.raw[leftEdge] !== "|" ||
+      line.raw[rightBoxLeft] !== "|" ||
+      !hasWhitespaceOnlyBetween(line.raw, leftBoxRight + 1, rightBoxLeft)
+    ) {
+      return undefined;
+    }
+  }
+
+  return {
+    splitStart: rightBoxLeft,
+    splitEnd: leftBoxRight + 1,
+  };
+}
+
+function isTwoBoxBorderLikeLine(line: ObservedLine): boolean {
+  if (line.pluses.length !== 4) {
+    return false;
+  }
+
+  const [leftEdge, leftBoxRight, rightBoxLeft, rightEdge] = line.pluses;
+  if (
+    leftEdge === undefined ||
+    leftBoxRight === undefined ||
+    rightBoxLeft === undefined ||
+    rightEdge === undefined ||
+    leftBoxRight - leftEdge < 2 ||
+    rightBoxLeft - leftBoxRight !== 2 ||
+    rightEdge - rightBoxLeft < 2
+  ) {
+    return false;
+  }
+
+  if (
+    !hasWhitespaceOnlyPrefix(line.raw, leftEdge) ||
+    !hasWhitespaceOnlySuffix(line.raw, rightEdge)
+  ) {
+    return false;
+  }
+
+  const leftBetween = line.raw.slice(leftEdge + 1, leftBoxRight);
+  const rightBetween = line.raw.slice(rightBoxLeft + 1, rightEdge);
+  const gap = line.raw.slice(leftBoxRight + 1, rightBoxLeft);
+
+  return (
+    leftBetween.includes("-") &&
+    /^[ -]+$/.test(leftBetween) &&
+    gap === " " &&
+    rightBetween.includes("-") &&
+    /^[ -]+$/.test(rightBetween)
+  );
+}
+
+function samePositions(
+  left: readonly number[],
+  right: readonly number[],
+): boolean {
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  return left.every((value, index) => value === right[index]);
 }
 
 function renderBoxLines(
@@ -350,6 +508,14 @@ function hasWhitespaceOnlyPrefix(raw: string, edge: number): boolean {
 
 function hasWhitespaceOnlySuffix(raw: string, edge: number): boolean {
   return /^\s*$/.test(raw.slice(edge + 1));
+}
+
+function hasWhitespaceOnlyBetween(
+  raw: string,
+  start: number,
+  end: number,
+): boolean {
+  return /^\s*$/.test(raw.slice(start, end));
 }
 
 function findCharacterPositions(

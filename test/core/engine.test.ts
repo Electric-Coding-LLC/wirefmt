@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { formatWireframe, lintWireframe } from "../../src/core";
+import { uglyInputFixtures } from "../fixtures/ugly-inputs";
 
 describe("formatWireframe", () => {
   test("normalizes a simple box", () => {
@@ -73,6 +74,20 @@ describe("formatWireframe", () => {
     });
   });
 
+  test("formats exactly two sibling boxes in one block with independent widths", () => {
+    const result = formatWireframe(uglyInputFixtures.supportedAdjacentBoxes, {
+      pad: 1,
+      width: 10,
+    });
+
+    expect(result).toEqual({
+      formattedText:
+        "+--------+ +--------+\n| a      | | bb     |\n+--------+ +--------+\n",
+      changed: true,
+      warnings: [],
+    });
+  });
+
   test("uses the minimum width when width is omitted and expands when needed", () => {
     const input = "+---+\n|x|\n+---+\n";
 
@@ -99,7 +114,7 @@ describe("formatWireframe", () => {
   });
 
   test("passes unsupported multi-box layouts through unchanged with warnings", () => {
-    const input = "+--+ +--+\n|a| |b|\n+--+ +--+\n";
+    const input = "+--+   +--+\n|a|   |b|\n+--+   +--+\n";
 
     const result = formatWireframe(input, {
       pad: 1,
@@ -115,6 +130,50 @@ describe("formatWireframe", () => {
         },
       ],
     });
+  });
+
+  test("passes near-miss adjacent layouts with gap text through unchanged", () => {
+    const input = "+---+ +---+\n| a |x| b |\n+---+ +---+\n";
+
+    const formatResult = formatWireframe(input, {
+      pad: 1,
+    });
+    const lintResult = lintWireframe(input, "fixture.txt");
+
+    expect(formatResult).toEqual({
+      formattedText: input,
+      changed: false,
+      warnings: [
+        {
+          code: "unsupported-layout",
+          message: "Contains multiple adjacent boxes or columns.",
+        },
+      ],
+    });
+    expect(lintResult.issues).toEqual([
+      {
+        code: "unsupported-layout",
+        message: "Contains multiple adjacent boxes or columns.",
+        source: "fixture.txt",
+        lineOrBlock: "1",
+      },
+    ]);
+  });
+
+  test("repairs a malformed box inside the supported sibling-box frame", () => {
+    const result = lintWireframe(
+      uglyInputFixtures.supportedAdjacentBoxesBrokenRight,
+      "fixture.txt",
+    );
+
+    expect(result.issues).toEqual([
+      {
+        code: "broken-border",
+        message: "Content row is missing a closing edge.",
+        source: "fixture.txt",
+        lineOrBlock: "2",
+      },
+    ]);
   });
 
   test("passes unsupported plain text through unchanged", () => {
@@ -199,7 +258,7 @@ describe("lintWireframe", () => {
 
   test("reports unsupported multi-box layouts conservatively", () => {
     const result = lintWireframe(
-      "+--+ +--+\n|a| |b|\n+--+ +--+\n",
+      "+--+   +--+\n|a|   |b|\n+--+   +--+\n",
       "fixture.txt",
     );
 

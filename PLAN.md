@@ -1,20 +1,14 @@
 # Plan Index
 
-This repo keeps release plans under `plans/<release>/` so each plan can be
-archived as a single folder when the release is complete.
+This file points to the active initiative map for the repo. Status and
+checkbox state live in the linked `EXECMAP.md`, not here.
 
 ## Active Plan
 
-- [`v0.3`](plans/v0.3/PLAN.md)
+- [v0.4](./plans/v0.4/EXECMAP.md)
 
 ## Completed Plans
 
-- [`v0-poc`](plans/v0-poc/PLAN.md)
-- [`v0.2`](plans/v0.2/PLAN.md)
-
-## Archive Strategy
-
-- Keep the in-progress plan in its own versioned folder.
-- When a release is finished, move or rename that folder into an archive
-  location if needed.
-- Start the next release plan as another versioned folder under `plans/`.
+- [v0.3](./plans/v0.3/EXECMAP.md)
+- [v0.2](./plans/v0.2/EXECMAP.md)
+- [v0-poc](./plans/v0-poc/EXECMAP.md)

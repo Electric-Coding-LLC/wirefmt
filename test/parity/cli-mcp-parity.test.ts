@@ -32,6 +32,32 @@ describe("CLI and MCP parity", () => {
     });
   });
 
+  test("formats the supported sibling-box frame the same way through both interfaces", async () => {
+    const input = uglyInputFixtures.supportedAdjacentBoxes;
+    const runtime = createRuntime({
+      stdin: input,
+    });
+
+    const exitCode = await runCli(
+      ["format", "--width", "10", "--pad", "1"],
+      runtime,
+    );
+    const toolResult = runWirefmtFormatTool({
+      text: input,
+      width: 10,
+      pad: 1,
+    });
+
+    expect(exitCode).toBe(0);
+    expect(runtime.stdout).toBe(toolResult.formattedText);
+    expect(runtime.stderr).toBe("");
+    expect(toolResult).toEqual({
+      formattedText:
+        "+--------+ +--------+\n| a      | | bb     |\n+--------+ +--------+\n",
+      changed: true,
+    });
+  });
+
   test("renders lint findings with the shared renderer and matching issue details", async () => {
     const input = uglyInputFixtures.partialStructure;
     const runtime = createRuntime({
@@ -74,9 +100,36 @@ describe("CLI and MCP parity", () => {
     expect(runtime.stderr).toBe("");
   });
 
+  test("renders lint findings for a malformed box inside the supported pair", async () => {
+    const input = uglyInputFixtures.supportedAdjacentBoxesBrokenRight;
+    const runtime = createRuntime({
+      files: {
+        "fixture.txt": input,
+      },
+    });
+
+    const exitCode = await runCli(["lint", "fixture.txt"], runtime);
+    const toolResult = runWirefmtLintTool({
+      text: input,
+      source: "fixture.txt",
+    });
+
+    expect(exitCode).toBe(1);
+    expect(toolResult.issues).toEqual([
+      {
+        code: "broken-border",
+        message: "Content row is missing a closing edge.",
+        source: "fixture.txt",
+        lineOrBlock: "2",
+      },
+    ]);
+    expect(runtime.stdout).toBe(`${formatLintIssuesText(toolResult.issues)}\n`);
+    expect(runtime.stderr).toBe("");
+  });
+
   test("stays conservative for plain text and unsupported multi-box layouts", async () => {
     const plainText = "plain text\n";
-    const multiBox = "+--+ +--+\n|a| |b|\n+--+ +--+\n";
+    const multiBox = "+--+   +--+\n|a|   |b|\n+--+   +--+\n";
 
     const plainRuntime = createRuntime({
       stdin: plainText,

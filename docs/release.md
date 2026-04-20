@@ -1,18 +1,22 @@
 # Release Guide
 
-This guide covers the `v0.3` release flow for `wirefmt`.
+This guide covers the `v0.4` release flow for `wirefmt`.
 
 ## Release Message
 
-`wirefmt v0.3 ships portable Node-launched CLI and MCP entrypoints so installed users no longer need Bun in the default path.`
+`wirefmt v0.4 adds bounded adjacent sibling box support while keeping the install/runtime story and conservative product boundary from v0.3.`
 
 ## Scope Guardrails
 
 - Ship one small product surface.
 - CLI: `wirefmt format`, `wirefmt lint`
 - MCP: `wirefmt.format`, `wirefmt.lint`
-- Keep the release centered on conservative single-box behavior.
-- Keep Bun as the maintainer runtime, not the installed-user runtime.
+- Keep the release centered on exactly two sibling boxes with one separating
+  space column.
+- Keep wider-gap layouts, three-plus columns, nested boxes, and other broader
+  layout ambitions out of scope.
+- Preserve Bun as the maintainer runtime and Node as the installed-user
+  runtime.
 
 ## Prerequisites
 
@@ -42,7 +46,7 @@ release commit, and create the matching local `v<version>` tag:
 bun run release -- patch
 ```
 
-For the first `v0.3` release from the current `0.2.x` line, use `minor`:
+For the first `v0.4` release from the current `0.3.x` line, use `minor`:
 
 ```sh
 bun run release -- minor
@@ -53,7 +57,7 @@ Supported arguments:
 - `patch`
 - `minor`
 - `major`
-- an explicit version like `0.3.0`
+- an explicit version like `0.4.0`
 
 By default, the helper pushes the release commit, waits for GitHub `CI` on the
 default branch to succeed for that exact SHA, and then pushes the matching
@@ -120,7 +124,7 @@ Before using it:
 - Bump `package.json` to the release version and push that commit to `main`.
 - Push the matching release tag for the same commit.
 
-The release workflow runs on a matching tag push such as `v0.3.0`, then checks
+The release workflow runs on a matching tag push such as `v0.4.0`, then checks
 that the tagged commit has already passed the `CI` workflow for a push to the
 default branch.
 
