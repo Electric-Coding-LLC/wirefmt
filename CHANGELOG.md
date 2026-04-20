@@ -5,7 +5,7 @@ All notable shipped changes to `@electric_coding/wirefmt` are recorded here.
 This file tracks published package history. Plans under `plans/*` track
 execution, not shipped versions.
 
-## 0.4.0 - 2026-04-20
+## 0.4.0 - 2026-04-19
 
 ### Changed
 

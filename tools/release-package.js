@@ -8,6 +8,10 @@ import {
   writeFileSync,
 } from "node:fs";
 import path from "node:path";
+import {
+  createChangelogEntry,
+  formatChangelogDate,
+} from "../src/release/changelog";
 
 const repoRoot = process.cwd();
 const packageJsonPath = path.join(repoRoot, "package.json");
@@ -363,19 +367,8 @@ function updateChangelog(version, packageName) {
   }
 
   const subjects = readReleaseSubjects(sinceTag, packageName);
-  const date = new Date().toISOString().slice(0, 10);
-  const bullets =
-    subjects.length > 0
-      ? subjects.map((subject) => `- ${subject}`)
-      : ["- Maintenance release without additional user-facing notes."];
-
-  const entry = [
-    `## ${version} - ${date}`,
-    "",
-    "### Changed",
-    "",
-    ...bullets,
-  ].join("\n");
+  const date = formatChangelogDate();
+  const entry = createChangelogEntry(version, date, subjects);
   const existing = ensureChangelogExists();
 
   if (existing.includes(`## ${version} - `)) {
