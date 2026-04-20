@@ -24,6 +24,18 @@ describe("ugly input fixtures", () => {
     });
   });
 
+  test("formats the supported two-box frame with independent widths", () => {
+    const result = formatWireframe(uglyInputFixtures.supportedAdjacentBoxes, {
+      pad: 1,
+    });
+
+    expect(result).toEqual({
+      formattedText: uglyInputFixtures.supportedAdjacentBoxes,
+      changed: false,
+      warnings: [],
+    });
+  });
+
   test("reports partial structure without expanding the supported scope", () => {
     const result = lintWireframe(
       uglyInputFixtures.partialStructure,
@@ -48,6 +60,33 @@ describe("ugly input fixtures", () => {
         message: "Rows do not agree on a single box width.",
         source: "fixture.txt",
         lineOrBlock: "1",
+      },
+    ]);
+  });
+
+  test("repairs and lints a malformed box inside the supported two-box frame", () => {
+    const formatResult = formatWireframe(
+      uglyInputFixtures.supportedAdjacentBoxesBrokenRight,
+      {
+        pad: 1,
+      },
+    );
+    const lintResult = lintWireframe(
+      uglyInputFixtures.supportedAdjacentBoxesBrokenRight,
+      "fixture.txt",
+    );
+
+    expect(formatResult).toEqual({
+      formattedText: "+---+ +----+\n| a | | bb |\n+---+ +----+\n",
+      changed: true,
+      warnings: [],
+    });
+    expect(lintResult.issues).toEqual([
+      {
+        code: "broken-border",
+        message: "Content row is missing a closing edge.",
+        source: "fixture.txt",
+        lineOrBlock: "2",
       },
     ]);
   });

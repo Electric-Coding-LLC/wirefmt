@@ -23,7 +23,7 @@ entrypoints easier to install and run.
 - [x] [Update docs and release tooling for portable installs](03-implementation/03-update-docs-and-release-tooling-for-portable-installs.md)
 - [x] [Add installed-package smoke tests](04-testing/01-add-installed-package-smoke-tests.md)
 - [x] [Verify CLI and MCP launch flows](04-testing/02-verify-cli-and-mcp-launch-flows.md)
-- [ ] [Prepare v0.3 release](05-release/01-prepare-v0.3-release.md)
+- [x] [Prepare v0.3 release](05-release/01-prepare-v0.3-release.md)
 
 ## Done When
 

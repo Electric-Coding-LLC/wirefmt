@@ -10,7 +10,22 @@ export const uglyInputFixtures = {
     "",
   ].join("\n"),
   partialStructure: ["+----+", "|  x", "+--+", ""].join("\n"),
-  unsupportedMultiBoxLayout: ["+--+ +--+", "|a|   |b|", "+--+ +--+", ""].join(
-    "\n",
-  ),
+  supportedAdjacentBoxes: [
+    "+---+ +----+",
+    "| a | | bb |",
+    "+---+ +----+",
+    "",
+  ].join("\n"),
+  supportedAdjacentBoxesBrokenRight: [
+    "+---+ +----+",
+    "| a | | bb",
+    "+---+ +----+",
+    "",
+  ].join("\n"),
+  unsupportedMultiBoxLayout: [
+    "+--+   +--+",
+    "|a|   |b|",
+    "+--+   +--+",
+    "",
+  ].join("\n"),
 } as const;

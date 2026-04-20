@@ -6,6 +6,8 @@ CLI and MCP surfaces for the same small box workflows.
 ## What It Does
 
 - Normalizes single-box wireframe blocks that use `+`, `-`, and `|`.
+- Normalizes exactly two adjacent sibling boxes in one block when they are
+  separated by one space column and share the same row structure.
 - Preserves blank-line-separated non-box blocks around formatted boxes.
 - Uses one shared core engine for the CLI and MCP tool.
 - Leaves unsupported layouts unchanged instead of guessing.
@@ -96,6 +98,20 @@ Output:
 +--------+
 ```
 
+Formatting the supported adjacent sibling-box shape:
+
+```sh
+printf '+---+ +----+\n|a| |bb|\n+---+ +----+\n' | bun run cli format --width 10
+```
+
+Output:
+
+```text
++--------+ +--------+
+| a      | | bb     |
++--------+ +--------+
+```
+
 ## CLI Reference
 
 Usage:
@@ -129,6 +145,9 @@ Exit codes:
 Notes:
 
 - When `[file]` is omitted, the CLI reads from stdin.
+- `format` also supports exactly two adjacent sibling boxes in one block when
+  they are separated by one space column; `width` and `pad` apply to each box
+  independently.
 - `lint` currently accepts `--width` and `--pad` for CLI surface parity, but the
   current lint engine does not use them when producing findings.
 
@@ -306,7 +325,10 @@ every ASCII diagram.
 
 Current non-goals:
 
-- Formatting multiple adjacent boxes or column layouts in one block.
+- Formatting three or more adjacent boxes or broader column layouts in one
+  block.
+- Formatting two-box layouts with wider gaps, staggered rows, or mismatched
+  vertical structure.
 - Formatting layouts with interior border rows.
 - Moving or rewriting text that appears outside the detected box.
 - Acting as a general-purpose ASCII art formatter.
