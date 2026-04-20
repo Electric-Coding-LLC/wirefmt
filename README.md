@@ -38,7 +38,7 @@ bun install
 Release helper:
 
 ```sh
-bun run release -- patch
+bun run release -- <patch|minor|major|x.y.z>
 ```
 
 Local tarball smoke-test flow:
@@ -340,17 +340,27 @@ If a block falls outside the supported shape, `format` preserves the original
 text and reports a warning when appropriate. Use `lint` to surface likely
 problems without changing the input.
 
-## Release Build Notes
+## Releases
 
-- `v0.3` release message: `wirefmt v0.3 ships portable Node-launched CLI and MCP entrypoints so installed users no longer need Bun in the default path.`
-- `v0.4` release message: `wirefmt v0.4 adds bounded adjacent sibling box support while keeping the install/runtime story and conservative product boundary from v0.3.`
-- `v0.5` release message: `wirefmt v0.5 expands the bounded adjacent-box contract to preserve small consistent gaps without broadening into general column formatting.`
-- Published package contents are limited to `bin/`, bundled `dist/`, and the
-  top-level package docs.
-- A release-candidate tarball can be checked locally with `bun run build`
-  followed by `npm pack --json --ignore-scripts` before publishing.
-- Use `bun run release -- <patch|minor|major|x.y.z>` to bump the version, run
-  the local release gate, commit the version bump, and tag `v<version>`.
-- The release helper verifies the packaged `wirefmt` CLI and `wirefmt-mcp`
-  server from a clean npm-installed temp directory before it creates a tag.
-- The release publish and tagging flow lives in [docs/release.md](./docs/release.md).
+Normal PRs do not need release metadata.
+
+When you want to cut a release, run:
+
+```sh
+bun run release -- <patch|minor|major|x.y.z>
+```
+
+That command:
+
+- bumps the package version
+- updates `CHANGELOG.md`
+- runs the release gate
+- verifies the packaged tarball from a clean temp install
+- commits and tags the release
+- pushes the tag for publication
+
+The GitHub Actions release workflow then publishes the tagged version and uses
+the matching `CHANGELOG.md` entry for the GitHub release notes.
+
+Use [CHANGELOG.md](./CHANGELOG.md) for shipped history and
+[docs/release.md](./docs/release.md) for the maintainer runbook.

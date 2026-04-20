@@ -1,34 +1,65 @@
-# Release Guide
+# Release Runbook
 
-This guide covers the `v0.5` release flow for `wirefmt`.
+This guide covers how `wirefmt` releases are prepared and published.
 
-## Release Message
+It is not the source of truth for release scope. Use the docs this way:
 
-`wirefmt v0.5 expands the bounded adjacent-box contract to preserve small consistent gaps without broadening into general column formatting.`
+- `plans/*/EXECMAP.md`: active execution and completion state
+- `CHANGELOG.md`: shipped package history
+- `docs/release.md`: publication runbook
 
-## Scope Guardrails
+Keep those responsibilities separate so the plan does not become a release
+manual, and the changelog does not become a step tracker.
 
-- Ship one small product surface.
-- CLI: `wirefmt format`, `wirefmt lint`
-- MCP: `wirefmt.format`, `wirefmt.lint`
-- Keep the release centered on exactly two sibling boxes with a consistent
-  one- to three-space gap.
-- Keep wider-gap layouts, three-plus columns, nested boxes, and other broader
-  layout ambitions out of scope.
-- Preserve Bun as the maintainer runtime and Node as the installed-user
-  runtime.
+## Normal PRs
 
-## Prerequisites
+Normal PRs do not need release metadata files.
 
-- Bun `>=1.3.11`
-- Node.js `>=18.17.0`
-- npm publish access for `@electric_coding/wirefmt`
-- Push access to `origin`
-- A clean git worktree
+## Release Flow
 
-## Preflight
+When you want to cut a release, run:
 
-Run the full local gate before creating release artifacts:
+```sh
+bun run release -- <patch|minor|major|x.y.z>
+```
+
+That command:
+
+- bumps `package.json`
+- updates `CHANGELOG.md` from shipped commits since the last published version
+- runs `bun run check`
+- runs `bun run build`
+- runs `bun run pack:dry-run`
+- runs the packed-install smoke test
+- creates the release commit
+- creates the matching tag
+- pushes the release commit
+- waits for CI on `main`
+- pushes the tag so the publish workflow can run
+
+Use `--no-push` to prepare the release commit and tag locally only. Use
+`--push-tag` to skip waiting for CI locally and push the tag immediately.
+
+## Publish Workflow
+
+The publish workflow lives at `.github/workflows/release.yml` and runs when a
+tag like `v0.5.0` is pushed.
+
+It:
+
+- validates that the tag matches `package.json`
+- verifies successful CI for the tagged commit on `main`
+- reruns `bun run check`
+- rebuilds the packaged entrypoints
+- reruns `bun run pack:dry-run`
+- reruns the packed-install smoke test
+- publishes to npm if the version is not already published
+- creates a GitHub release using the matching `CHANGELOG.md` entry
+
+## Local Checks
+
+Before cutting a release, run the normal local gate if you have not just run
+the release helper:
 
 ```sh
 bun install
@@ -37,122 +68,37 @@ bun run build
 bun run pack:dry-run
 ```
 
-## Local Release Helper
-
-Use the bundled helper to bump the version, run the release gate, create the
-release commit, and create the matching local `v<version>` tag:
-
-```sh
-bun run release -- patch
-```
-
-For the first `v0.5` release from the current `0.4.x` line, use `minor`:
-
-```sh
-bun run release -- minor
-```
-
-Supported arguments:
-
-- `patch`
-- `minor`
-- `major`
-- an explicit version like `0.5.0`
-
-By default, the helper pushes the release commit, waits for GitHub `CI` on the
-default branch to succeed for that exact SHA, and then pushes the matching
-release tag automatically.
-
-Add `--no-push` to stop after the local commit and tag.
-Add `--push-tag` to push the tag immediately after the release commit instead of
-waiting for `CI`.
-
-The helper checks all of these before it creates the release commit:
-
-- full local typecheck, lint, and test gate
-- bundled `dist/` build for the published Node runtime
-- npm package contents via `npm pack --dry-run`
-- clean temp install through `npm install`
-- installed `wirefmt` version, help, format, and lint behavior
-- installed `wirefmt-mcp` version, tool registration, and MCP format/lint calls
-- shipped package layout:
-  - Node wrappers in `bin/`
-  - bundled runtime in `dist/`
-  - no installed `src/` runtime dependency
-- a clean git worktree with no staged or unstaged changes
-
-## Build And Smoke-Test The Tarball
-
-Create the tarball:
+For a direct tarball smoke test:
 
 ```sh
 tarball="$(npm pack --json --ignore-scripts | node -e 'const fs = require("fs"); const input = fs.readFileSync(0, "utf8"); const match = input.match(/"filename"\\s*:\\s*"([^"]+\\.tgz)"/); if (!match) process.exit(1); console.log(match[1]);')"
-```
-
-Run the same packed-install smoke test that CI and the release helper use:
-
-```sh
 node tools/smoke-packed-install.js "$tarball"
 ```
 
-That script installs the tarball into a clean temp directory with npm and
-verifies both shipped entrypoints from the installed package shape.
+## Verify Publication
 
-## Publish The Package
-
-Publish from the repo root after the tarball smoke test passes:
-
-```sh
-npm publish
-```
-
-Confirm the published version:
+After the release workflow runs, confirm the published version:
 
 ```sh
 npm view @electric_coding/wirefmt version
 ```
 
-## Manual GitHub Release Workflow
-
-This repo also supports a GitHub Actions release flow through
-`.github/workflows/release.yml`.
-
-Before using it:
-
-- Configure npm trusted publishing for this repository if the workflow should
-  publish to npm.
-- Bump `package.json` to the release version and push that commit to `main`.
-- Push the matching release tag for the same commit.
-
-The release workflow runs on a matching tag push such as `v0.5.0`, then checks
-that the tagged commit has already passed the `CI` workflow for a push to the
-default branch.
-
-Recommended sequence:
+Confirm the GitHub release exists:
 
 ```sh
-bun run release -- minor
+gh release view v<version>
 ```
 
-Manual alternative:
+## If Publish Fails
 
-1. `bun run release -- minor --no-push`
-2. `git push`
-3. Wait for `CI` on the pushed default-branch commit to succeed.
-4. `git push origin v<version>`
+The most likely remaining blockers are workflow configuration, npm trusted
+publishing, or a stale changelog base tag.
 
-The workflow reads the package name and version from `package.json`, confirms
-that the pushed tag matches that version, verifies successful `CI` for the
-tagged commit, runs `bun run check`, runs the packaged-install smoke test,
-publishes to npm when that version is not already in the registry, then creates
-the GitHub release notes.
+If the workflow fails during publish:
 
-## Immediate Distribution Paths
-
-Until consumers switch to the registry release, `wirefmt` can also be shared as:
-
-- A global package install: `npm install -g @electric_coding/wirefmt`
-- A local tarball install produced by `npm pack`
-- A direct MCP server command from a local checkout with Bun
-
-See [MCP Integration](./mcp.md) for MCP client wiring examples.
+- confirm trusted publishing is configured for this repository on npm
+- confirm the package name is still intended to be `@electric_coding/wirefmt`
+- confirm the pushed tag matches `package.json`
+- confirm the tagged commit succeeded in `CI / verify` on `main`
+- confirm `CHANGELOG.md` contains the matching version entry
+- rerun the workflow after the underlying fix
