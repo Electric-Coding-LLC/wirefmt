@@ -5,6 +5,12 @@ All notable shipped changes to `@electric_coding/wirefmt` are recorded here.
 This file tracks published package history. Plans under `plans/*` track
 execution, not shipped versions.
 
+## 0.5.1 - 2026-04-19
+
+### Changed
+
+- surface cli format warnings (#21)
+
 ## 0.5.0 - 2026-04-19
 
 ### Changed
@@ -55,4 +61,5 @@ execution, not shipped versions.
 
 - Initial public release of the conservative `wirefmt` formatter and linter.
 - Ship matching CLI and MCP surfaces for small ASCII box workflows.
+
 
