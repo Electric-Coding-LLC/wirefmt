@@ -1,7 +1,7 @@
 # MCP Integration
 
 `wirefmt` ships a stdio MCP server through the `wirefmt-mcp` executable. The
-`v0.4` agent-facing surface is intentionally small: `wirefmt.format` and
+`v0.5` agent-facing surface is intentionally small: `wirefmt.format` and
 `wirefmt.lint`.
 
 ## Runtime Prerequisites
@@ -61,9 +61,9 @@ Behavior notes:
 
 - `wirefmt.format` and `wirefmt.lint` still use the same shared core engine as
   the CLI.
-- In `v0.4`, that shared engine supports single boxes plus exactly two adjacent
-  sibling boxes in one block when they are separated by one space column and
-  share the same row structure.
+- In `v0.5`, that shared engine supports single boxes plus exactly two adjacent
+  sibling boxes in one block when they are separated by one to three literal
+  space columns and share the same row structure.
 - Wider-gap layouts, three-plus sibling boxes, nested boxes, and broader
   column-like layouts remain conservative unsupported cases.
 
@@ -90,7 +90,7 @@ Behavior notes:
 
 ```json
 {
-  "text": "+---+ +----+\n|a| |bb|\n+---+ +----+\n",
+  "text": "+---+   +----+\n|a|   |bb|\n+---+   +----+\n",
   "width": 10,
   "pad": 1
 }
@@ -98,7 +98,7 @@ Behavior notes:
 
 ```json
 {
-  "formattedText": "+--------+ +--------+\n| a      | | bb     |\n+--------+ +--------+\n",
+  "formattedText": "+--------+   +--------+\n| a      |   | bb     |\n+--------+   +--------+\n",
   "changed": true
 }
 ```

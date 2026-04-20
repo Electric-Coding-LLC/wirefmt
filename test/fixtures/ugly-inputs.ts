@@ -22,10 +22,22 @@ export const uglyInputFixtures = {
     "+---+ +----+",
     "",
   ].join("\n"),
+  supportedAdjacentBoxesThreeSpaces: [
+    "+---+   +----+",
+    "| a |   | bb |",
+    "+---+   +----+",
+    "",
+  ].join("\n"),
+  supportedAdjacentBoxesThreeSpacesBrokenRight: [
+    "+---+   +----+",
+    "| a |   | bb",
+    "+---+   +----+",
+    "",
+  ].join("\n"),
   unsupportedMultiBoxLayout: [
-    "+--+   +--+",
-    "|a|   |b|",
-    "+--+   +--+",
+    "+--+    +--+",
+    "|a|    |b|",
+    "+--+    +--+",
     "",
   ].join("\n"),
 } as const;

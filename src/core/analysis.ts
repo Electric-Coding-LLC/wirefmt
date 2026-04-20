@@ -273,6 +273,9 @@ interface SupportedAdjacentSiblingFrame {
   readonly splitEnd: number;
 }
 
+const MIN_SUPPORTED_ADJACENT_BOX_GAP = 1;
+const MAX_SUPPORTED_ADJACENT_BOX_GAP = 3;
+
 function detectSupportedAdjacentSiblingFrame(
   lines: readonly ObservedLine[],
 ): SupportedAdjacentSiblingFrame | undefined {
@@ -304,8 +307,15 @@ function detectSupportedAdjacentSiblingFrame(
     leftEdge === undefined ||
     leftBoxRight === undefined ||
     rightBoxLeft === undefined ||
-    rightEdge === undefined ||
-    rightBoxLeft - leftBoxRight !== 2
+    rightEdge === undefined
+  ) {
+    return undefined;
+  }
+
+  const gapWidth = rightBoxLeft - leftBoxRight - 1;
+  if (
+    gapWidth < MIN_SUPPORTED_ADJACENT_BOX_GAP ||
+    gapWidth > MAX_SUPPORTED_ADJACENT_BOX_GAP
   ) {
     return undefined;
   }
@@ -334,7 +344,7 @@ function detectSupportedAdjacentSiblingFrame(
     if (
       line.raw[leftEdge] !== "|" ||
       line.raw[rightBoxLeft] !== "|" ||
-      !hasWhitespaceOnlyBetween(line.raw, leftBoxRight + 1, rightBoxLeft)
+      !hasLiteralSpacesOnlyBetween(line.raw, leftBoxRight + 1, rightBoxLeft)
     ) {
       return undefined;
     }
@@ -358,8 +368,15 @@ function isTwoBoxBorderLikeLine(line: ObservedLine): boolean {
     rightBoxLeft === undefined ||
     rightEdge === undefined ||
     leftBoxRight - leftEdge < 2 ||
-    rightBoxLeft - leftBoxRight !== 2 ||
     rightEdge - rightBoxLeft < 2
+  ) {
+    return false;
+  }
+
+  const gapWidth = rightBoxLeft - leftBoxRight - 1;
+  if (
+    gapWidth < MIN_SUPPORTED_ADJACENT_BOX_GAP ||
+    gapWidth > MAX_SUPPORTED_ADJACENT_BOX_GAP
   ) {
     return false;
   }
@@ -373,12 +390,11 @@ function isTwoBoxBorderLikeLine(line: ObservedLine): boolean {
 
   const leftBetween = line.raw.slice(leftEdge + 1, leftBoxRight);
   const rightBetween = line.raw.slice(rightBoxLeft + 1, rightEdge);
-  const gap = line.raw.slice(leftBoxRight + 1, rightBoxLeft);
 
   return (
     leftBetween.includes("-") &&
     /^[ -]+$/.test(leftBetween) &&
-    gap === " " &&
+    hasLiteralSpacesOnlyBetween(line.raw, leftBoxRight + 1, rightBoxLeft) &&
     rightBetween.includes("-") &&
     /^[ -]+$/.test(rightBetween)
   );
@@ -510,12 +526,12 @@ function hasWhitespaceOnlySuffix(raw: string, edge: number): boolean {
   return /^\s*$/.test(raw.slice(edge + 1));
 }
 
-function hasWhitespaceOnlyBetween(
+function hasLiteralSpacesOnlyBetween(
   raw: string,
   start: number,
   end: number,
 ): boolean {
-  return /^\s*$/.test(raw.slice(start, end));
+  return /^ +$/.test(raw.slice(start, end));
 }
 
 function findCharacterPositions(

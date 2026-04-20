@@ -32,8 +32,8 @@ describe("CLI and MCP parity", () => {
     });
   });
 
-  test("formats the supported sibling-box frame the same way through both interfaces", async () => {
-    const input = uglyInputFixtures.supportedAdjacentBoxes;
+  test("formats the supported sibling-box frame with preserved gap the same way through both interfaces", async () => {
+    const input = uglyInputFixtures.supportedAdjacentBoxesThreeSpaces;
     const runtime = createRuntime({
       stdin: input,
     });
@@ -53,7 +53,7 @@ describe("CLI and MCP parity", () => {
     expect(runtime.stderr).toBe("");
     expect(toolResult).toEqual({
       formattedText:
-        "+--------+ +--------+\n| a      | | bb     |\n+--------+ +--------+\n",
+        "+--------+   +--------+\n| a      |   | bb     |\n+--------+   +--------+\n",
       changed: true,
     });
   });
@@ -129,7 +129,7 @@ describe("CLI and MCP parity", () => {
 
   test("stays conservative for plain text and unsupported multi-box layouts", async () => {
     const plainText = "plain text\n";
-    const multiBox = "+--+   +--+\n|a|   |b|\n+--+   +--+\n";
+    const multiBox = "+--+    +--+\n|a|    |b|\n+--+    +--+\n";
 
     const plainRuntime = createRuntime({
       stdin: plainText,
