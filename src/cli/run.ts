@@ -5,6 +5,7 @@ import {
   type LintResult,
   lintWireframe,
 } from "../core";
+import { formatWarningsText } from "../format-output";
 import { formatLintIssuesText } from "../lint-output";
 import {
   CliError,
@@ -51,6 +52,9 @@ export async function runCli(
         buildFormatOptions(parsed.width, parsed.pad),
       );
       runtime.writeStdout(result.formattedText);
+      if (result.warnings.length > 0) {
+        runtime.writeStderr(`${formatWarningsText(result.warnings)}\n`);
+      }
       return 0;
     }
 

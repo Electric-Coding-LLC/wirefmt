@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { runCli } from "../../src/cli/run";
 import type { CliRuntime } from "../../src/cli/runtime";
 import type { FormatOptions, FormatResult, LintResult } from "../../src/core";
+import { formatWarningsText } from "../../src/format-output";
 
 describe("runCli", () => {
   test("formats stdin with normalized output", async () => {
@@ -66,6 +67,43 @@ describe("runCli", () => {
     expect(exitCode).toBe(0);
     expect(runtime.stdout).toBe("plain text\n");
     expect(runtime.stderr).toBe("");
+  });
+
+  test("prints formatter warnings to stderr without changing the exit code", async () => {
+    const runtime = createRuntime({
+      stdin: "+--+    +--+\n|a|    |b|\n+--+    +--+\n",
+    });
+
+    const exitCode = await runCli(["format"], runtime, {
+      format(text: string, _options: FormatOptions): FormatResult {
+        return {
+          formattedText: text,
+          changed: false,
+          warnings: [
+            {
+              code: "unsupported-layout",
+              message: "Contains multiple adjacent boxes or columns.",
+            },
+          ],
+        };
+      },
+      lint(_text: string, _source: string): LintResult {
+        return {
+          issues: [],
+        };
+      },
+    });
+
+    expect(exitCode).toBe(0);
+    expect(runtime.stdout).toBe("+--+    +--+\n|a|    |b|\n+--+    +--+\n");
+    expect(runtime.stderr).toBe(
+      `${formatWarningsText([
+        {
+          code: "unsupported-layout",
+          message: "Contains multiple adjacent boxes or columns.",
+        },
+      ])}\n`,
+    );
   });
 
   test("prints help with a zero exit code", async () => {

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { runCli } from "../../src/cli/run";
 import type { CliRuntime } from "../../src/cli/runtime";
+import { formatWarningsText } from "../../src/format-output";
 import { formatLintIssuesText } from "../../src/lint-output";
 import { runWirefmtFormatTool, runWirefmtLintTool } from "../../src/mcp";
 import { WIREFMT_VERSION } from "../../src/version";
@@ -173,7 +174,14 @@ describe("CLI and MCP parity", () => {
 
     expect(multiBoxExitCode).toBe(0);
     expect(multiBoxRuntime.stdout).toBe(multiBox);
-    expect(multiBoxRuntime.stderr).toBe("");
+    expect(multiBoxRuntime.stderr).toBe(
+      `${formatWarningsText([
+        {
+          code: "unsupported-layout",
+          message: "Contains multiple adjacent boxes or columns.",
+        },
+      ])}\n`,
+    );
     expect(multiBoxFormatResult).toEqual({
       formattedText: multiBox,
       changed: false,
