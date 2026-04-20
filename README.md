@@ -139,13 +139,17 @@ Flags:
 Exit codes:
 
 - `0`: Success. `format` wrote formatted or unchanged text. `lint` found no
-  issues.
+  issues. `format` warnings are reported on stderr without changing the exit
+  code.
 - `1`: `lint` found one or more issues.
 - `2`: CLI usage or runtime error.
 
 Notes:
 
 - When `[file]` is omitted, the CLI reads from stdin.
+- `format` writes formatted or unchanged text to stdout and reports formatter
+  warnings on stderr when a box-like block stays on the conservative pass-through
+  path.
 - `format` also supports exactly two adjacent sibling boxes in one block when
   they are separated by one to three literal space columns; `width` and `pad`
   apply to each box independently, and supported layouts preserve the observed
