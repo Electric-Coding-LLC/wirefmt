@@ -88,6 +88,39 @@ describe("formatWireframe", () => {
     });
   });
 
+  test("preserves supported wider gaps between sibling boxes", () => {
+    const result = formatWireframe(
+      uglyInputFixtures.supportedAdjacentBoxesThreeSpaces,
+      {
+        pad: 1,
+        width: 10,
+      },
+    );
+
+    expect(result).toEqual({
+      formattedText:
+        "+--------+   +--------+\n| a      |   | bb     |\n+--------+   +--------+\n",
+      changed: true,
+      warnings: [],
+    });
+  });
+
+  test("supports the bounded two-space gap between sibling boxes", () => {
+    const input = "+---+  +----+\n| a |  | bb |\n+---+  +----+\n";
+
+    const result = formatWireframe(input, {
+      pad: 1,
+      width: 10,
+    });
+
+    expect(result).toEqual({
+      formattedText:
+        "+--------+  +--------+\n| a      |  | bb     |\n+--------+  +--------+\n",
+      changed: true,
+      warnings: [],
+    });
+  });
+
   test("uses the minimum width when width is omitted and expands when needed", () => {
     const input = "+---+\n|x|\n+---+\n";
 
@@ -114,7 +147,7 @@ describe("formatWireframe", () => {
   });
 
   test("passes unsupported multi-box layouts through unchanged with warnings", () => {
-    const input = "+--+   +--+\n|a|   |b|\n+--+   +--+\n";
+    const input = "+--+    +--+\n|a|    |b|\n+--+    +--+\n";
 
     const result = formatWireframe(input, {
       pad: 1,
@@ -258,7 +291,7 @@ describe("lintWireframe", () => {
 
   test("reports unsupported multi-box layouts conservatively", () => {
     const result = lintWireframe(
-      "+--+   +--+\n|a|   |b|\n+--+   +--+\n",
+      "+--+    +--+\n|a|    |b|\n+--+    +--+\n",
       "fixture.txt",
     );
 

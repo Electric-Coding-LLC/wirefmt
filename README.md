@@ -7,7 +7,8 @@ CLI and MCP surfaces for the same small box workflows.
 
 - Normalizes single-box wireframe blocks that use `+`, `-`, and `|`.
 - Normalizes exactly two adjacent sibling boxes in one block when they are
-  separated by one space column and share the same row structure.
+  separated by one to three literal space columns and share the same row
+  structure.
 - Preserves blank-line-separated non-box blocks around formatted boxes.
 - Uses one shared core engine for the CLI and MCP tool.
 - Leaves unsupported layouts unchanged instead of guessing.
@@ -101,15 +102,15 @@ Output:
 Formatting the supported adjacent sibling-box shape:
 
 ```sh
-printf '+---+ +----+\n|a| |bb|\n+---+ +----+\n' | bun run cli format --width 10
+printf '+---+   +----+\n|a|   |bb|\n+---+   +----+\n' | bun run cli format --width 10
 ```
 
 Output:
 
 ```text
-+--------+ +--------+
-| a      | | bb     |
-+--------+ +--------+
++--------+   +--------+
+| a      |   | bb     |
++--------+   +--------+
 ```
 
 ## CLI Reference
@@ -146,8 +147,9 @@ Notes:
 
 - When `[file]` is omitted, the CLI reads from stdin.
 - `format` also supports exactly two adjacent sibling boxes in one block when
-  they are separated by one space column; `width` and `pad` apply to each box
-  independently.
+  they are separated by one to three literal space columns; `width` and `pad`
+  apply to each box independently, and supported layouts preserve the observed
+  gap width.
 - `lint` currently accepts `--width` and `--pad` for CLI surface parity, but the
   current lint engine does not use them when producing findings.
 
@@ -327,8 +329,8 @@ Current non-goals:
 
 - Formatting three or more adjacent boxes or broader column layouts in one
   block.
-- Formatting two-box layouts with wider gaps, staggered rows, or mismatched
-  vertical structure.
+- Formatting two-box layouts with four-plus space gaps, staggered rows, or
+  mismatched vertical structure.
 - Formatting layouts with interior border rows.
 - Moving or rewriting text that appears outside the detected box.
 - Acting as a general-purpose ASCII art formatter.
@@ -341,6 +343,8 @@ problems without changing the input.
 ## Release Build Notes
 
 - `v0.3` release message: `wirefmt v0.3 ships portable Node-launched CLI and MCP entrypoints so installed users no longer need Bun in the default path.`
+- `v0.4` release message: `wirefmt v0.4 adds bounded adjacent sibling box support while keeping the install/runtime story and conservative product boundary from v0.3.`
+- `v0.5` release message: `wirefmt v0.5 expands the bounded adjacent-box contract to preserve small consistent gaps without broadening into general column formatting.`
 - Published package contents are limited to `bin/`, bundled `dist/`, and the
   top-level package docs.
 - A release-candidate tarball can be checked locally with `bun run build`
