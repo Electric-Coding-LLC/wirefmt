@@ -147,7 +147,7 @@ describe("formatWireframe", () => {
   });
 
   test("passes unsupported multi-box layouts through unchanged with warnings", () => {
-    const input = "+--+    +--+\n|a|    |b|\n+--+    +--+\n";
+    const input = uglyInputFixtures.unsupportedMultiBoxLayout;
 
     const result = formatWireframe(input, {
       pad: 1,
@@ -158,11 +158,42 @@ describe("formatWireframe", () => {
       changed: false,
       warnings: [
         {
-          code: "unsupported-layout",
-          message: "Contains multiple adjacent boxes or columns.",
+          code: "unsupported-box-columns",
+          message:
+            "Contains three or more sibling boxes or broader column layout.",
         },
       ],
     });
+  });
+
+  test("reports unsupported adjacent gaps with a stable diagnostic", () => {
+    const input = uglyInputFixtures.unsupportedAdjacentGap;
+
+    const formatResult = formatWireframe(input, {
+      pad: 1,
+    });
+    const lintResult = lintWireframe(input, "fixture.txt");
+
+    expect(formatResult).toEqual({
+      formattedText: input,
+      changed: false,
+      warnings: [
+        {
+          code: "unsupported-adjacent-gap",
+          message:
+            "Adjacent sibling boxes must be separated by one to three literal spaces.",
+        },
+      ],
+    });
+    expect(lintResult.issues).toEqual([
+      {
+        code: "unsupported-adjacent-gap",
+        message:
+          "Adjacent sibling boxes must be separated by one to three literal spaces.",
+        source: "fixture.txt",
+        lineOrBlock: "1",
+      },
+    ]);
   });
 
   test("passes near-miss adjacent layouts with gap text through unchanged", () => {
@@ -178,15 +209,17 @@ describe("formatWireframe", () => {
       changed: false,
       warnings: [
         {
-          code: "unsupported-layout",
-          message: "Contains multiple adjacent boxes or columns.",
+          code: "unsupported-adjacent-gap",
+          message:
+            "Adjacent sibling boxes must be separated by one to three literal spaces.",
         },
       ],
     });
     expect(lintResult.issues).toEqual([
       {
-        code: "unsupported-layout",
-        message: "Contains multiple adjacent boxes or columns.",
+        code: "unsupported-adjacent-gap",
+        message:
+          "Adjacent sibling boxes must be separated by one to three literal spaces.",
         source: "fixture.txt",
         lineOrBlock: "1",
       },
@@ -223,7 +256,7 @@ describe("formatWireframe", () => {
     });
   });
 
-  test("passes through text outside a detected box with a warning", () => {
+  test("keeps ambiguous partial box intent separate from unsupported layouts", () => {
     const input = "foo +--+\n|x|\n+--+\n";
 
     const result = formatWireframe(input, {
@@ -240,6 +273,34 @@ describe("formatWireframe", () => {
         },
       ],
     });
+  });
+
+  test("passes through text outside a detected box with a stable diagnostic", () => {
+    const input = uglyInputFixtures.textOutsideBox;
+
+    const formatResult = formatWireframe(input, {
+      pad: 1,
+    });
+    const lintResult = lintWireframe(input, "fixture.txt");
+
+    expect(formatResult).toEqual({
+      formattedText: input,
+      changed: false,
+      warnings: [
+        {
+          code: "text-outside-box",
+          message: "Contains text outside the detected box.",
+        },
+      ],
+    });
+    expect(lintResult.issues).toEqual([
+      {
+        code: "text-outside-box",
+        message: "Contains text outside the detected box.",
+        source: "fixture.txt",
+        lineOrBlock: "1",
+      },
+    ]);
   });
 
   test("preserves literal pipe characters inside box content", () => {
@@ -291,14 +352,43 @@ describe("lintWireframe", () => {
 
   test("reports unsupported multi-box layouts conservatively", () => {
     const result = lintWireframe(
-      "+--+    +--+\n|a|    |b|\n+--+    +--+\n",
+      uglyInputFixtures.unsupportedMultiBoxLayout,
       "fixture.txt",
     );
 
     expect(result.issues).toEqual([
       {
-        code: "unsupported-layout",
-        message: "Contains multiple adjacent boxes or columns.",
+        code: "unsupported-box-columns",
+        message:
+          "Contains three or more sibling boxes or broader column layout.",
+        source: "fixture.txt",
+        lineOrBlock: "1",
+      },
+    ]);
+  });
+
+  test("reports unsupported adjacent stagger and interior border cases distinctly", () => {
+    const staggered = lintWireframe(
+      uglyInputFixtures.unsupportedAdjacentStagger,
+      "fixture.txt",
+    );
+    const interiorBorder = lintWireframe(
+      uglyInputFixtures.unsupportedInteriorBorder,
+      "fixture.txt",
+    );
+
+    expect(staggered.issues).toEqual([
+      {
+        code: "unsupported-adjacent-stagger",
+        message: "Adjacent sibling boxes must share the same row structure.",
+        source: "fixture.txt",
+        lineOrBlock: "1",
+      },
+    ]);
+    expect(interiorBorder.issues).toEqual([
+      {
+        code: "unsupported-interior-border",
+        message: "Contains interior border rows.",
         source: "fixture.txt",
         lineOrBlock: "1",
       },

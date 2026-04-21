@@ -119,8 +119,47 @@ describe("ugly input fixtures", () => {
       changed: false,
       warnings: [
         {
-          code: "unsupported-layout",
-          message: "Contains multiple adjacent boxes or columns.",
+          code: "unsupported-box-columns",
+          message:
+            "Contains three or more sibling boxes or broader column layout.",
+        },
+      ],
+    });
+  });
+
+  test("keeps unsupported adjacent gaps conservative with a specific warning", () => {
+    const result = formatWireframe(uglyInputFixtures.unsupportedAdjacentGap, {
+      pad: 1,
+    });
+
+    expect(result).toEqual({
+      formattedText: uglyInputFixtures.unsupportedAdjacentGap,
+      changed: false,
+      warnings: [
+        {
+          code: "unsupported-adjacent-gap",
+          message:
+            "Adjacent sibling boxes must be separated by one to three literal spaces.",
+        },
+      ],
+    });
+  });
+
+  test("keeps interior border layouts conservative with a specific warning", () => {
+    const result = formatWireframe(
+      uglyInputFixtures.unsupportedInteriorBorder,
+      {
+        pad: 1,
+      },
+    );
+
+    expect(result).toEqual({
+      formattedText: uglyInputFixtures.unsupportedInteriorBorder,
+      changed: false,
+      warnings: [
+        {
+          code: "unsupported-interior-border",
+          message: "Contains interior border rows.",
         },
       ],
     });

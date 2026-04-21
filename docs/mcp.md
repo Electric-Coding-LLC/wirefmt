@@ -61,11 +61,13 @@ Behavior notes:
 
 - `wirefmt.format` and `wirefmt.lint` still use the same shared core engine as
   the CLI.
-- In `v0.5`, that shared engine supports single boxes plus exactly two adjacent
+- In `v0.6`, that shared engine supports single boxes plus exactly two adjacent
   sibling boxes in one block when they are separated by one to three literal
   space columns and share the same row structure.
-- Wider-gap layouts, three-plus sibling boxes, nested boxes, and broader
-  column-like layouts remain conservative unsupported cases.
+- Conservative unsupported cases now use stable diagnostics such as
+  `unsupported-box-columns`, `unsupported-adjacent-gap`,
+  `unsupported-adjacent-stagger`, `unsupported-interior-border`, and
+  `text-outside-box`.
 
 `wirefmt.format` input:
 

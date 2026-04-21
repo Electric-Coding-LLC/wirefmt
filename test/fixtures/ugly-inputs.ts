@@ -35,9 +35,22 @@ export const uglyInputFixtures = {
     "",
   ].join("\n"),
   unsupportedMultiBoxLayout: [
+    "+--+ +--+ +--+",
+    "|a| |b| |c|",
+    "+--+ +--+ +--+",
+    "",
+  ].join("\n"),
+  unsupportedAdjacentGap: [
     "+--+    +--+",
     "|a|    |b|",
     "+--+    +--+",
     "",
   ].join("\n"),
+  unsupportedAdjacentStagger: ["+--+ +--+", "|a| |b|", " +--+ +--+", ""].join(
+    "\n",
+  ),
+  unsupportedInteriorBorder: ["+--+", "|a|", "+--+", "|b|", "+--+", ""].join(
+    "\n",
+  ),
+  textOutsideBox: ["+--+", "|a| note", "+--+", ""].join("\n"),
 } as const;

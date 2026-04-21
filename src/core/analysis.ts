@@ -1,17 +1,19 @@
+import {
+  detectUnsupportedAdjacentSiblingLayout,
+  type ObservedLine,
+} from "./conservative-diagnostics";
 import type { WireframeBlock } from "./document";
-import type { FormatOptions, FormatWarning, LintIssueCode } from "./types";
+import type {
+  DiagnosticCode,
+  FormatOptions,
+  FormatWarning,
+  LintIssueCode,
+} from "./types";
 
 interface InternalIssue {
   readonly code: LintIssueCode;
   readonly message: string;
   readonly lineOrBlock: string;
-}
-
-interface ObservedLine {
-  readonly raw: string;
-  readonly lineNumber: number;
-  readonly pluses: readonly number[];
-  readonly pipes: readonly number[];
 }
 
 export interface AnalyzedBlock {
@@ -42,9 +44,20 @@ export function analyzeWireframeBlock(
     return analyzeSupportedAdjacentSiblingBoxes(block, adjacentFrame, options);
   }
 
+  const unsupportedAdjacentLayout =
+    detectUnsupportedAdjacentSiblingLayout(observed);
+  if (unsupportedAdjacentLayout !== undefined) {
+    return unsupportedLayout(
+      block,
+      unsupportedAdjacentLayout.code,
+      unsupportedAdjacentLayout.message,
+    );
+  }
+
   if (observed.some((line) => line.pluses.length > 2)) {
     return unsupportedLayout(
       block,
+      "unsupported-layout",
       "Contains multiple adjacent boxes or columns.",
     );
   }
@@ -63,13 +76,21 @@ export function analyzeWireframeBlock(
   }
 
   if (borderIndexes.length > 2) {
-    return unsupportedLayout(block, "Contains interior border rows.");
+    return unsupportedLayout(
+      block,
+      "unsupported-interior-border",
+      "Contains interior border rows.",
+    );
   }
 
   if (
     borderIndexes.some((index) => index !== 0 && index !== observed.length - 1)
   ) {
-    return unsupportedLayout(block, "Contains interior border rows.");
+    return unsupportedLayout(
+      block,
+      "unsupported-interior-border",
+      "Contains interior border rows.",
+    );
   }
 
   const contentIndexes = observed
@@ -98,6 +119,7 @@ export function analyzeWireframeBlock(
     if (!hasWhitespaceOnlyPrefix(line.raw, leftEdge)) {
       return unsupportedLayout(
         block,
+        "text-outside-box",
         "Contains text outside the detected box.",
       );
     }
@@ -164,6 +186,7 @@ export function analyzeWireframeBlock(
     ) {
       return unsupportedLayout(
         block,
+        "text-outside-box",
         "Contains text outside the detected box.",
       );
     }
@@ -453,12 +476,13 @@ function ambiguousBox(block: WireframeBlock, message: string): AnalyzedBlock {
 
 function unsupportedLayout(
   block: WireframeBlock,
+  code: DiagnosticCode,
   message: string,
 ): AnalyzedBlock {
   return {
     lines: block.lines,
-    warnings: [createWarning("unsupported-layout", message)],
-    issues: [createIssue("unsupported-layout", message, block.startLine)],
+    warnings: [createWarning(code, message)],
+    issues: [createIssue(code, message, block.startLine)],
   };
 }
 
@@ -612,6 +636,6 @@ function createIssue(
   };
 }
 
-function createWarning(code: string, message: string): FormatWarning {
+function createWarning(code: DiagnosticCode, message: string): FormatWarning {
   return { code, message };
 }

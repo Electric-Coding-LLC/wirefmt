@@ -2,13 +2,15 @@
 
 This guide covers how `wirefmt` releases are prepared and published.
 
-It is not the source of truth for release scope. Use the docs this way:
+It is not the source of truth for roadmap version scope. Use the docs this way:
 
+- `ROADMAP.md`: version order, version scope, and internal version lifecycle
+- `PLAN.md`: one active promoted version
 - `plans/*/EXECMAP.md`: active execution and completion state
 - `CHANGELOG.md`: shipped package history
 - `docs/release.md`: publication runbook
 
-Keep those responsibilities separate so the plan does not become a release
+Keep those responsibilities separate so the plan does not become a publication
 manual, and the changelog does not become a step tracker.
 
 ## Normal PRs
