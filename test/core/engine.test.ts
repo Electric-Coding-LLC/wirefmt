@@ -138,6 +138,20 @@ describe("formatWireframe", () => {
     });
   });
 
+  test("formats a compound single box with full-width divider rows", () => {
+    const result = formatWireframe(uglyInputFixtures.supportedCompoundPanels, {
+      pad: 1,
+      width: 10,
+    });
+
+    expect(result).toEqual({
+      formattedText:
+        "+--------+\n| top    |\n+--------+\n| mid    |\n+--------+\n| bot    |\n+--------+\n",
+      changed: true,
+      warnings: [],
+    });
+  });
+
   test("uses the minimum width when width is omitted and expands when needed", () => {
     const input = "+---+\n|x|\n+---+\n";
 
@@ -301,6 +315,22 @@ describe("formatWireframe", () => {
         message: "Content row is missing a closing edge.",
         source: "fixture.txt",
         lineOrBlock: "2",
+      },
+    ]);
+  });
+
+  test("repairs a malformed row inside the supported compound-box frame", () => {
+    const result = lintWireframe(
+      uglyInputFixtures.supportedCompoundPanelsBrokenRight,
+      "fixture.txt",
+    );
+
+    expect(result.issues).toEqual([
+      {
+        code: "broken-border",
+        message: "Content row is missing a closing edge.",
+        source: "fixture.txt",
+        lineOrBlock: "4",
       },
     ]);
   });

@@ -61,7 +61,8 @@ Behavior notes:
 
 - `wirefmt.format` and `wirefmt.lint` still use the same shared core engine as
   the CLI.
-- In `v0.7`, that shared engine supports single boxes plus exactly two or three
+- In `v0.8`, that shared engine supports single boxes, one bounded compound-box
+  panel shape, plus exactly two or three
   adjacent sibling boxes in one block when adjacent boxes are separated by one
   to three literal space columns and all boxes share the same row structure.
 - Conservative unsupported cases now use stable diagnostics such as

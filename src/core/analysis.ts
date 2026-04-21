@@ -16,6 +16,10 @@ interface InternalIssue {
   readonly lineOrBlock: string;
 }
 
+type BoxRenderRow =
+  | { readonly kind: "content"; readonly content: string }
+  | { readonly kind: "divider" };
+
 export interface AnalyzedBlock {
   readonly lines: readonly string[];
   readonly warnings: readonly FormatWarning[];
@@ -84,17 +88,7 @@ export function analyzeWireframeBlock(
     );
   }
 
-  if (borderIndexes.length > 2) {
-    return unsupportedLayout(
-      block,
-      "unsupported-interior-border",
-      "Contains interior border rows.",
-    );
-  }
-
-  if (
-    borderIndexes.some((index) => index !== 0 && index !== observed.length - 1)
-  ) {
+  if (hasUnsupportedInteriorBorderStructure(borderIndexes)) {
     return unsupportedLayout(
       block,
       "unsupported-interior-border",
@@ -118,13 +112,13 @@ export function analyzeWireframeBlock(
   }
 
   const issues: InternalIssue[] = [];
-  const contents: string[] = [];
+  const renderRows: BoxRenderRow[] = [];
   const innerWidths: number[] = [];
   const { leftEdge, rightEdge } = edgeCandidates;
   const topBorderPresent = borderIndexes.includes(0);
   const bottomBorderPresent = borderIndexes.includes(observed.length - 1);
 
-  for (const line of observed) {
+  for (const [index, line] of observed.entries()) {
     if (!hasWhitespaceOnlyPrefix(line.raw, leftEdge)) {
       return unsupportedLayout(
         block,
@@ -147,6 +141,10 @@ export function analyzeWireframeBlock(
       const [firstPlus, lastPlus] = line.pluses;
       if (firstPlus !== undefined && lastPlus !== undefined) {
         innerWidths.push(lastPlus - firstPlus - 1);
+      }
+
+      if (index !== 0 && index !== observed.length - 1) {
+        renderRows.push({ kind: "divider" });
       }
       continue;
     }
@@ -201,7 +199,7 @@ export function analyzeWireframeBlock(
     }
 
     const content = extractContent(line.raw, firstPipe, lastPipe).trim();
-    contents.push(content);
+    renderRows.push({ kind: "content", content });
 
     const observedInnerWidth = (lastPipe ?? rightEdge) - firstPipe - 1;
     if (observedInnerWidth > 0) {
@@ -229,7 +227,7 @@ export function analyzeWireframeBlock(
     );
   }
 
-  const renderedLines = renderBoxLines(leftEdge, contents, options);
+  const renderedLines = renderBoxLines(leftEdge, renderRows, options);
 
   return {
     lines: renderedLines,
@@ -619,26 +617,68 @@ function samePositions(
 
 function renderBoxLines(
   leftEdge: number,
-  contents: readonly string[],
+  rows: readonly BoxRenderRow[],
   options: FormatOptions,
 ): readonly string[] {
   const indent = " ".repeat(leftEdge);
   const minimumOuterWidth =
-    Math.max(...contents.map((content) => content.length), 0) +
+    Math.max(
+      ...rows
+        .filter((row): row is Extract<BoxRenderRow, { kind: "content" }> => {
+          return row.kind === "content";
+        })
+        .map((row) => row.content.length),
+      0,
+    ) +
     options.pad * 2 +
     2;
   const outerWidth = Math.max(options.width ?? 0, minimumOuterWidth);
   const innerWidth = outerWidth - 2;
   const border = `${indent}+${"-".repeat(innerWidth)}+`;
 
-  const rows = contents.map((content) => {
-    const trailingSpaces = innerWidth - options.pad - content.length;
-    return `${indent}|${" ".repeat(options.pad)}${content}${" ".repeat(
+  const renderedRows = rows.map((row) => {
+    if (row.kind === "divider") {
+      return border;
+    }
+
+    const trailingSpaces = innerWidth - options.pad - row.content.length;
+    return `${indent}|${" ".repeat(options.pad)}${row.content}${" ".repeat(
       trailingSpaces,
     )}|`;
   });
 
-  return [border, ...rows, border];
+  return [border, ...renderedRows, border];
+}
+
+function hasUnsupportedInteriorBorderStructure(
+  borderIndexes: readonly number[],
+): boolean {
+  if (borderIndexes.length === 0) {
+    return false;
+  }
+
+  if (
+    borderIndexes.some((index, position) => {
+      if (position === 0 || position === borderIndexes.length - 1) {
+        return false;
+      }
+
+      const previousIndex = borderIndexes[position - 1];
+      const nextIndex = borderIndexes[position + 1];
+      return (
+        previousIndex !== undefined &&
+        nextIndex !== undefined &&
+        (index !== previousIndex + 2 || index !== nextIndex - 2)
+      );
+    })
+  ) {
+    return true;
+  }
+
+  return borderIndexes.some((index, position) => {
+    const previousIndex = borderIndexes[position - 1];
+    return previousIndex !== undefined && index === previousIndex + 1;
+  });
 }
 
 function passthrough(block: WireframeBlock): AnalyzedBlock {
