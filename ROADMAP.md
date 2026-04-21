@@ -59,7 +59,7 @@ Rules:
 ## Version Horizon
 
 ### v0.6: Specific Conservative Diagnostics
-Status: active
+Status: completed
 Execmap: `plans/v0.6/EXECMAP.md`
 
 - Replace generic conservative warnings with stable reasons for common
@@ -70,7 +70,8 @@ Execmap: `plans/v0.6/EXECMAP.md`
 - Update CLI, MCP, docs, and tests so the diagnostic contract is explicit.
 
 ### v0.7: Exactly Three Horizontal Sibling Boxes
-Status: planned
+Status: active
+Execmap: `plans/v0.7/EXECMAP.md`
 
 - Support exactly three adjacent sibling boxes in one block when all boxes
   share the same row structure and each gap is one to three literal spaces.

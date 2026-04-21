@@ -28,6 +28,18 @@ export const uglyInputFixtures = {
     "+---+   +----+",
     "",
   ].join("\n"),
+  supportedThreeSiblingBoxes: [
+    "+---+ +----+   +---+",
+    "| a | | bb |   | c |",
+    "+---+ +----+   +---+",
+    "",
+  ].join("\n"),
+  supportedThreeSiblingBoxesBrokenRight: [
+    "+---+ +----+   +---+",
+    "| a | | bb |   | c ",
+    "+---+ +----+   +---+",
+    "",
+  ].join("\n"),
   supportedAdjacentBoxesThreeSpacesBrokenRight: [
     "+---+   +----+",
     "| a |   | bb",
@@ -35,15 +47,21 @@ export const uglyInputFixtures = {
     "",
   ].join("\n"),
   unsupportedMultiBoxLayout: [
-    "+--+ +--+ +--+",
-    "|a| |b| |c|",
-    "+--+ +--+ +--+",
+    "+--+ +--+ +--+ +--+",
+    "|a| |b| |c| |d|",
+    "+--+ +--+ +--+ +--+",
     "",
   ].join("\n"),
   unsupportedAdjacentGap: [
     "+--+    +--+",
     "|a|    |b|",
     "+--+    +--+",
+    "",
+  ].join("\n"),
+  unsupportedThreeSiblingGap: [
+    "+---+    +----+ +---+",
+    "| a |    | bb | | c |",
+    "+---+    +----+ +---+",
     "",
   ].join("\n"),
   unsupportedAdjacentStagger: ["+--+ +--+", "|a| |b|", " +--+ +--+", ""].join(

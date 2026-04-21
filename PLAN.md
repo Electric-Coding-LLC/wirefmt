@@ -5,10 +5,11 @@ checkbox state live in the linked `EXECMAP.md`, not here.
 
 ## Active Plan
 
-- [v0.6](./plans/v0.6/EXECMAP.md)
+- [v0.7](./plans/v0.7/EXECMAP.md)
 
 ## Completed Plans
 
+- [v0.6](./plans/v0.6/EXECMAP.md)
 - [v0.5.1](./plans/v0.5.1/EXECMAP.md)
 - [v0.5](./plans/v0.5/EXECMAP.md)
 - [v0.4](./plans/v0.4/EXECMAP.md)

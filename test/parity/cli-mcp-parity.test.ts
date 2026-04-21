@@ -59,6 +59,32 @@ describe("CLI and MCP parity", () => {
     });
   });
 
+  test("formats the supported three-box frame the same way through both interfaces", async () => {
+    const input = uglyInputFixtures.supportedThreeSiblingBoxes;
+    const runtime = createRuntime({
+      stdin: input,
+    });
+
+    const exitCode = await runCli(
+      ["format", "--width", "10", "--pad", "1"],
+      runtime,
+    );
+    const toolResult = runWirefmtFormatTool({
+      text: input,
+      width: 10,
+      pad: 1,
+    });
+
+    expect(exitCode).toBe(0);
+    expect(runtime.stdout).toBe(toolResult.formattedText);
+    expect(runtime.stderr).toBe("");
+    expect(toolResult).toEqual({
+      formattedText:
+        "+--------+ +--------+   +--------+\n| a      | | bb     |   | c      |\n+--------+ +--------+   +--------+\n",
+      changed: true,
+    });
+  });
+
   test("renders lint findings with the shared renderer and matching issue details", async () => {
     const input = uglyInputFixtures.partialStructure;
     const runtime = createRuntime({
@@ -179,7 +205,7 @@ describe("CLI and MCP parity", () => {
         {
           code: "unsupported-box-columns",
           message:
-            "Contains three or more sibling boxes or broader column layout.",
+            "Contains four or more sibling boxes or broader column layout.",
         },
       ])}\n`,
     );
@@ -190,7 +216,7 @@ describe("CLI and MCP parity", () => {
         {
           code: "unsupported-box-columns",
           message:
-            "Contains three or more sibling boxes or broader column layout.",
+            "Contains four or more sibling boxes or broader column layout.",
         },
       ],
     });
@@ -199,7 +225,7 @@ describe("CLI and MCP parity", () => {
         {
           code: "unsupported-box-columns",
           message:
-            "Contains three or more sibling boxes or broader column layout.",
+            "Contains four or more sibling boxes or broader column layout.",
           source: "<stdin>",
           lineOrBlock: "1",
         },
@@ -211,6 +237,12 @@ describe("CLI and MCP parity", () => {
     const cases = [
       {
         input: uglyInputFixtures.unsupportedAdjacentGap,
+        expectedCode: "unsupported-adjacent-gap",
+        expectedMessage:
+          "Adjacent sibling boxes must be separated by one to three literal spaces.",
+      },
+      {
+        input: uglyInputFixtures.unsupportedThreeSiblingGap,
         expectedCode: "unsupported-adjacent-gap",
         expectedMessage:
           "Adjacent sibling boxes must be separated by one to three literal spaces.",

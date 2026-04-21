@@ -6,9 +6,9 @@ CLI and MCP surfaces for the same small box workflows.
 ## What It Does
 
 - Normalizes single-box wireframe blocks that use `+`, `-`, and `|`.
-- Normalizes exactly two adjacent sibling boxes in one block when they are
-  separated by one to three literal space columns and share the same row
-  structure.
+- Normalizes exactly two or three adjacent sibling boxes in one block when
+  they share the same row structure and each adjacent gap is one to three
+  literal space columns.
 - Preserves blank-line-separated non-box blocks around formatted boxes.
 - Uses one shared core engine for the CLI and MCP tool.
 - Leaves unsupported layouts unchanged instead of guessing.
@@ -150,10 +150,10 @@ Notes:
 - `format` writes formatted or unchanged text to stdout and reports formatter
   warnings on stderr when a box-like block stays on the conservative pass-through
   path.
-- `format` also supports exactly two adjacent sibling boxes in one block when
-  they are separated by one to three literal space columns; `width` and `pad`
-  apply to each box independently, and supported layouts preserve the observed
-  gap width.
+- `format` also supports exactly two or three adjacent sibling boxes in one
+  block when adjacent boxes are separated by one to three literal space
+  columns; `width` and `pad` apply to each box independently, and supported
+  layouts preserve the observed gap widths.
 - `lint` currently accepts `--width` and `--pad` for CLI surface parity, but the
   current lint engine does not use them when producing findings.
 
@@ -336,20 +336,20 @@ every ASCII diagram.
 
 Current non-goals:
 
-- Formatting three or more adjacent boxes or broader column layouts in one
+- Formatting four or more adjacent boxes or broader column layouts in one
   block.
-- Formatting two-box layouts with four-plus space gaps, staggered rows, or
-  mismatched vertical structure.
+- Formatting two-box or three-box layouts with four-plus space gaps, staggered
+  rows, or mismatched vertical structure.
 - Formatting layouts with interior border rows.
 - Moving or rewriting text that appears outside the detected box.
 - Acting as a general-purpose ASCII art formatter.
 - Inferring author intent when the border shape is ambiguous.
 
 If a block falls outside the supported shape, `format` preserves the original
-text and reports a warning when appropriate. In `v0.6`, common conservative
-cases use stable diagnostics instead of one generic unsupported warning:
+text and reports a warning when appropriate. Common conservative cases use
+stable diagnostics instead of one generic unsupported warning:
 
-- `unsupported-box-columns`: three-plus sibling boxes or broader column layouts
+- `unsupported-box-columns`: four-plus sibling boxes or broader column layouts
 - `unsupported-adjacent-gap`: adjacent boxes separated by unsupported gaps
 - `unsupported-adjacent-stagger`: adjacent boxes that do not share one row structure
 - `unsupported-interior-border`: interior border rows inside one block

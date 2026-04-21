@@ -121,6 +121,23 @@ describe("formatWireframe", () => {
     });
   });
 
+  test("formats exactly three sibling boxes in one block with preserved gaps", () => {
+    const result = formatWireframe(
+      uglyInputFixtures.supportedThreeSiblingBoxes,
+      {
+        pad: 1,
+        width: 10,
+      },
+    );
+
+    expect(result).toEqual({
+      formattedText:
+        "+--------+ +--------+   +--------+\n| a      | | bb     |   | c      |\n+--------+ +--------+   +--------+\n",
+      changed: true,
+      warnings: [],
+    });
+  });
+
   test("uses the minimum width when width is omitted and expands when needed", () => {
     const input = "+---+\n|x|\n+---+\n";
 
@@ -160,7 +177,7 @@ describe("formatWireframe", () => {
         {
           code: "unsupported-box-columns",
           message:
-            "Contains three or more sibling boxes or broader column layout.",
+            "Contains four or more sibling boxes or broader column layout.",
         },
       ],
     });
@@ -226,9 +243,55 @@ describe("formatWireframe", () => {
     ]);
   });
 
+  test("reports unsupported three-box gaps with a stable diagnostic", () => {
+    const input = uglyInputFixtures.unsupportedThreeSiblingGap;
+
+    const formatResult = formatWireframe(input, {
+      pad: 1,
+    });
+    const lintResult = lintWireframe(input, "fixture.txt");
+
+    expect(formatResult).toEqual({
+      formattedText: input,
+      changed: false,
+      warnings: [
+        {
+          code: "unsupported-adjacent-gap",
+          message:
+            "Adjacent sibling boxes must be separated by one to three literal spaces.",
+        },
+      ],
+    });
+    expect(lintResult.issues).toEqual([
+      {
+        code: "unsupported-adjacent-gap",
+        message:
+          "Adjacent sibling boxes must be separated by one to three literal spaces.",
+        source: "fixture.txt",
+        lineOrBlock: "1",
+      },
+    ]);
+  });
+
   test("repairs a malformed box inside the supported sibling-box frame", () => {
     const result = lintWireframe(
       uglyInputFixtures.supportedAdjacentBoxesBrokenRight,
+      "fixture.txt",
+    );
+
+    expect(result.issues).toEqual([
+      {
+        code: "broken-border",
+        message: "Content row is missing a closing edge.",
+        source: "fixture.txt",
+        lineOrBlock: "2",
+      },
+    ]);
+  });
+
+  test("repairs a malformed box inside the supported three-box frame", () => {
+    const result = lintWireframe(
+      uglyInputFixtures.supportedThreeSiblingBoxesBrokenRight,
       "fixture.txt",
     );
 
@@ -360,7 +423,7 @@ describe("lintWireframe", () => {
       {
         code: "unsupported-box-columns",
         message:
-          "Contains three or more sibling boxes or broader column layout.",
+          "Contains four or more sibling boxes or broader column layout.",
         source: "fixture.txt",
         lineOrBlock: "1",
       },
