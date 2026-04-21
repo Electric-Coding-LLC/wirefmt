@@ -5,8 +5,20 @@ export interface FormatOptions {
   readonly pad: number;
 }
 
+export type DiagnosticCode =
+  | "ambiguous-box"
+  | "broken-border"
+  | "misaligned-edge"
+  | "text-outside-box"
+  | "uneven-width"
+  | "unsupported-adjacent-gap"
+  | "unsupported-adjacent-stagger"
+  | "unsupported-box-columns"
+  | "unsupported-interior-border"
+  | "unsupported-layout";
+
 export interface FormatWarning {
-  readonly code: string;
+  readonly code: DiagnosticCode;
   readonly message: string;
 }
 
@@ -16,12 +28,7 @@ export interface FormatResult {
   readonly warnings: readonly FormatWarning[];
 }
 
-export type LintIssueCode =
-  | "ambiguous-box"
-  | "broken-border"
-  | "misaligned-edge"
-  | "uneven-width"
-  | "unsupported-layout";
+export type LintIssueCode = DiagnosticCode;
 
 export interface LintIssue {
   readonly code: LintIssueCode;

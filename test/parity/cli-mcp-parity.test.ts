@@ -130,7 +130,7 @@ describe("CLI and MCP parity", () => {
 
   test("stays conservative for plain text and unsupported multi-box layouts", async () => {
     const plainText = "plain text\n";
-    const multiBox = "+--+    +--+\n|a|    |b|\n+--+    +--+\n";
+    const multiBox = uglyInputFixtures.unsupportedMultiBoxLayout;
 
     const plainRuntime = createRuntime({
       stdin: plainText,
@@ -177,8 +177,9 @@ describe("CLI and MCP parity", () => {
     expect(multiBoxRuntime.stderr).toBe(
       `${formatWarningsText([
         {
-          code: "unsupported-layout",
-          message: "Contains multiple adjacent boxes or columns.",
+          code: "unsupported-box-columns",
+          message:
+            "Contains three or more sibling boxes or broader column layout.",
         },
       ])}\n`,
     );
@@ -187,21 +188,95 @@ describe("CLI and MCP parity", () => {
       changed: false,
       warnings: [
         {
-          code: "unsupported-layout",
-          message: "Contains multiple adjacent boxes or columns.",
+          code: "unsupported-box-columns",
+          message:
+            "Contains three or more sibling boxes or broader column layout.",
         },
       ],
     });
     expect(multiBoxLintResult).toEqual({
       issues: [
         {
-          code: "unsupported-layout",
-          message: "Contains multiple adjacent boxes or columns.",
+          code: "unsupported-box-columns",
+          message:
+            "Contains three or more sibling boxes or broader column layout.",
           source: "<stdin>",
           lineOrBlock: "1",
         },
       ],
     });
+  });
+
+  test("keeps documented conservative diagnostics aligned across CLI and MCP", async () => {
+    const cases = [
+      {
+        input: uglyInputFixtures.unsupportedAdjacentGap,
+        expectedCode: "unsupported-adjacent-gap",
+        expectedMessage:
+          "Adjacent sibling boxes must be separated by one to three literal spaces.",
+      },
+      {
+        input: uglyInputFixtures.unsupportedAdjacentStagger,
+        expectedCode: "unsupported-adjacent-stagger",
+        expectedMessage:
+          "Adjacent sibling boxes must share the same row structure.",
+      },
+      {
+        input: uglyInputFixtures.unsupportedInteriorBorder,
+        expectedCode: "unsupported-interior-border",
+        expectedMessage: "Contains interior border rows.",
+      },
+      {
+        input: uglyInputFixtures.textOutsideBox,
+        expectedCode: "text-outside-box",
+        expectedMessage: "Contains text outside the detected box.",
+      },
+    ] as const;
+
+    for (const testCase of cases) {
+      const runtime = createRuntime({
+        stdin: testCase.input,
+      });
+
+      const exitCode = await runCli(["format"], runtime);
+      const formatResult = runWirefmtFormatTool({
+        text: testCase.input,
+      });
+      const lintResult = runWirefmtLintTool({
+        text: testCase.input,
+      });
+
+      expect(exitCode).toBe(0);
+      expect(runtime.stdout).toBe(testCase.input);
+      expect(runtime.stderr).toBe(
+        `${formatWarningsText([
+          {
+            code: testCase.expectedCode,
+            message: testCase.expectedMessage,
+          },
+        ])}\n`,
+      );
+      expect(formatResult).toEqual({
+        formattedText: testCase.input,
+        changed: false,
+        warnings: [
+          {
+            code: testCase.expectedCode,
+            message: testCase.expectedMessage,
+          },
+        ],
+      });
+      expect(lintResult).toEqual({
+        issues: [
+          {
+            code: testCase.expectedCode,
+            message: testCase.expectedMessage,
+            source: "<stdin>",
+            lineOrBlock: "1",
+          },
+        ],
+      });
+    }
   });
 
   test("prints the documented version string for the release smoke check", async () => {

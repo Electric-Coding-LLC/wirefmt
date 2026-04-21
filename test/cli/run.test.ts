@@ -81,8 +81,9 @@ describe("runCli", () => {
           changed: false,
           warnings: [
             {
-              code: "unsupported-layout",
-              message: "Contains multiple adjacent boxes or columns.",
+              code: "unsupported-adjacent-gap",
+              message:
+                "Adjacent sibling boxes must be separated by one to three literal spaces.",
             },
           ],
         };
@@ -99,8 +100,9 @@ describe("runCli", () => {
     expect(runtime.stderr).toBe(
       `${formatWarningsText([
         {
-          code: "unsupported-layout",
-          message: "Contains multiple adjacent boxes or columns.",
+          code: "unsupported-adjacent-gap",
+          message:
+            "Adjacent sibling boxes must be separated by one to three literal spaces.",
         },
       ])}\n`,
     );

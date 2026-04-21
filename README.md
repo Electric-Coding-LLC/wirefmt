@@ -182,7 +182,12 @@ Current issue codes:
 - `ambiguous-box`
 - `broken-border`
 - `misaligned-edge`
+- `text-outside-box`
 - `uneven-width`
+- `unsupported-adjacent-gap`
+- `unsupported-adjacent-stagger`
+- `unsupported-box-columns`
+- `unsupported-interior-border`
 - `unsupported-layout`
 
 ## MCP Usage
@@ -341,8 +346,16 @@ Current non-goals:
 - Inferring author intent when the border shape is ambiguous.
 
 If a block falls outside the supported shape, `format` preserves the original
-text and reports a warning when appropriate. Use `lint` to surface likely
-problems without changing the input.
+text and reports a warning when appropriate. In `v0.6`, common conservative
+cases use stable diagnostics instead of one generic unsupported warning:
+
+- `unsupported-box-columns`: three-plus sibling boxes or broader column layouts
+- `unsupported-adjacent-gap`: adjacent boxes separated by unsupported gaps
+- `unsupported-adjacent-stagger`: adjacent boxes that do not share one row structure
+- `unsupported-interior-border`: interior border rows inside one block
+- `text-outside-box`: trailing or surrounding text outside the detected box
+
+Use `lint` to surface likely problems without changing the input.
 
 ## Releases
 
