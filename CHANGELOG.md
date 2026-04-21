@@ -5,6 +5,14 @@ All notable shipped changes to `@electric_coding/wirefmt` are recorded here.
 This file tracks published package history. Plans under `plans/*` track
 execution, not shipped versions.
 
+## 0.8.0 - 2026-04-21
+
+### Changed
+
+- v0.6 conservative diagnostics (#22)
+- v0.7 three sibling boxes (#23)
+- [codex] v0.8 compound panels (#24)
+
 ## 0.5.1 - 2026-04-19
 
 ### Changed
@@ -61,5 +69,6 @@ execution, not shipped versions.
 
 - Initial public release of the conservative `wirefmt` formatter and linter.
 - Ship matching CLI and MCP surfaces for small ASCII box workflows.
+
 
 
