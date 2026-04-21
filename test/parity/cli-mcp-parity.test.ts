@@ -85,6 +85,32 @@ describe("CLI and MCP parity", () => {
     });
   });
 
+  test("formats the supported compound-box frame the same way through both interfaces", async () => {
+    const input = uglyInputFixtures.supportedCompoundPanels;
+    const runtime = createRuntime({
+      stdin: input,
+    });
+
+    const exitCode = await runCli(
+      ["format", "--width", "10", "--pad", "1"],
+      runtime,
+    );
+    const toolResult = runWirefmtFormatTool({
+      text: input,
+      width: 10,
+      pad: 1,
+    });
+
+    expect(exitCode).toBe(0);
+    expect(runtime.stdout).toBe(toolResult.formattedText);
+    expect(runtime.stderr).toBe("");
+    expect(toolResult).toEqual({
+      formattedText:
+        "+--------+\n| top    |\n+--------+\n| mid    |\n+--------+\n| bot    |\n+--------+\n",
+      changed: true,
+    });
+  });
+
   test("renders lint findings with the shared renderer and matching issue details", async () => {
     const input = uglyInputFixtures.partialStructure;
     const runtime = createRuntime({

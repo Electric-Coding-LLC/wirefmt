@@ -70,7 +70,7 @@ Execmap: `plans/v0.6/EXECMAP.md`
 - Update CLI, MCP, docs, and tests so the diagnostic contract is explicit.
 
 ### v0.7: Exactly Three Horizontal Sibling Boxes
-Status: active
+Status: completed
 Execmap: `plans/v0.7/EXECMAP.md`
 
 - Support exactly three adjacent sibling boxes in one block when all boxes
@@ -79,7 +79,8 @@ Execmap: `plans/v0.7/EXECMAP.md`
 - Continue rejecting staggered, nested, or broader grid-like layouts.
 
 ### v0.8: First Compound Single-Box Panels
-Status: planned
+Status: completed
+Execmap: `plans/v0.8/EXECMAP.md`
 
 - Support a single box that contains full-width interior border rows separating
   stacked panels.

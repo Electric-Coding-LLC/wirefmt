@@ -46,6 +46,26 @@ export const uglyInputFixtures = {
     "+---+   +----+",
     "",
   ].join("\n"),
+  supportedCompoundPanels: [
+    "+-----+",
+    "| top |",
+    "+-----+",
+    "| mid |",
+    "+-----+",
+    "| bot |",
+    "+-----+",
+    "",
+  ].join("\n"),
+  supportedCompoundPanelsBrokenRight: [
+    "+-----+",
+    "| top |",
+    "+-----+",
+    "| mid ",
+    "+-----+",
+    "| bot |",
+    "+-----+",
+    "",
+  ].join("\n"),
   unsupportedMultiBoxLayout: [
     "+--+ +--+ +--+ +--+",
     "|a| |b| |c| |d|",
@@ -67,8 +87,14 @@ export const uglyInputFixtures = {
   unsupportedAdjacentStagger: ["+--+ +--+", "|a| |b|", " +--+ +--+", ""].join(
     "\n",
   ),
-  unsupportedInteriorBorder: ["+--+", "|a|", "+--+", "|b|", "+--+", ""].join(
-    "\n",
-  ),
+  unsupportedInteriorBorder: [
+    "+-----+",
+    "|top|",
+    "+-----+",
+    "+-----+",
+    "|bot|",
+    "+-----+",
+    "",
+  ].join("\n"),
   textOutsideBox: ["+--+", "|a| note", "+--+", ""].join("\n"),
 } as const;

@@ -66,6 +66,18 @@ describe("ugly input fixtures", () => {
     });
   });
 
+  test("formats the supported compound-box frame while preserving divider rows", () => {
+    const result = formatWireframe(uglyInputFixtures.supportedCompoundPanels, {
+      pad: 1,
+    });
+
+    expect(result).toEqual({
+      formattedText: uglyInputFixtures.supportedCompoundPanels,
+      changed: false,
+      warnings: [],
+    });
+  });
+
   test("reports partial structure without expanding the supported scope", () => {
     const result = lintWireframe(
       uglyInputFixtures.partialStructure,

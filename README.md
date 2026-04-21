@@ -9,6 +9,8 @@ CLI and MCP surfaces for the same small box workflows.
 - Normalizes exactly two or three adjacent sibling boxes in one block when
   they share the same row structure and each adjacent gap is one to three
   literal space columns.
+- Normalizes one single-box compound panel layout when full-width interior
+  divider rows separate stacked content panels.
 - Preserves blank-line-separated non-box blocks around formatted boxes.
 - Uses one shared core engine for the CLI and MCP tool.
 - Leaves unsupported layouts unchanged instead of guessing.
@@ -113,6 +115,24 @@ Output:
 +--------+   +--------+
 ```
 
+Formatting the supported compound panel shape:
+
+```sh
+printf '+-----+\n|top|\n+-----+\n|mid |\n+-----+\n|bot|\n+-----+\n' | bun run cli format --width 10
+```
+
+Output:
+
+```text
++--------+
+| top    |
++--------+
+| mid    |
++--------+
+| bot    |
++--------+
+```
+
 ## CLI Reference
 
 Usage:
@@ -154,6 +174,9 @@ Notes:
   block when adjacent boxes are separated by one to three literal space
   columns; `width` and `pad` apply to each box independently, and supported
   layouts preserve the observed gap widths.
+- `format` also supports one single-box compound panel layout with full-width
+  divider rows; `width` and `pad` apply to the whole box, and divider rows stay
+  full width after normalization.
 - `lint` currently accepts `--width` and `--pad` for CLI surface parity, but the
   current lint engine does not use them when producing findings.
 
@@ -340,7 +363,8 @@ Current non-goals:
   block.
 - Formatting two-box or three-box layouts with four-plus space gaps, staggered
   rows, or mismatched vertical structure.
-- Formatting layouts with interior border rows.
+- Formatting compound boxes with empty panels, partial-width divider rows, or
+  nested interior structure.
 - Moving or rewriting text that appears outside the detected box.
 - Acting as a general-purpose ASCII art formatter.
 - Inferring author intent when the border shape is ambiguous.
@@ -352,7 +376,7 @@ stable diagnostics instead of one generic unsupported warning:
 - `unsupported-box-columns`: four-plus sibling boxes or broader column layouts
 - `unsupported-adjacent-gap`: adjacent boxes separated by unsupported gaps
 - `unsupported-adjacent-stagger`: adjacent boxes that do not share one row structure
-- `unsupported-interior-border`: interior border rows inside one block
+- `unsupported-interior-border`: unsupported interior-divider structure inside one box
 - `text-outside-box`: trailing or surrounding text outside the detected box
 
 Use `lint` to surface likely problems without changing the input.
