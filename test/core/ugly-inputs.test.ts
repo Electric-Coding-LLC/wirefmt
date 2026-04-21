@@ -51,6 +51,21 @@ describe("ugly input fixtures", () => {
     });
   });
 
+  test("formats the supported three-box frame while preserving each gap", () => {
+    const result = formatWireframe(
+      uglyInputFixtures.supportedThreeSiblingBoxes,
+      {
+        pad: 1,
+      },
+    );
+
+    expect(result).toEqual({
+      formattedText: uglyInputFixtures.supportedThreeSiblingBoxes,
+      changed: false,
+      warnings: [],
+    });
+  });
+
   test("reports partial structure without expanding the supported scope", () => {
     const result = lintWireframe(
       uglyInputFixtures.partialStructure,
@@ -121,7 +136,7 @@ describe("ugly input fixtures", () => {
         {
           code: "unsupported-box-columns",
           message:
-            "Contains three or more sibling boxes or broader column layout.",
+            "Contains four or more sibling boxes or broader column layout.",
         },
       ],
     });
@@ -134,6 +149,27 @@ describe("ugly input fixtures", () => {
 
     expect(result).toEqual({
       formattedText: uglyInputFixtures.unsupportedAdjacentGap,
+      changed: false,
+      warnings: [
+        {
+          code: "unsupported-adjacent-gap",
+          message:
+            "Adjacent sibling boxes must be separated by one to three literal spaces.",
+        },
+      ],
+    });
+  });
+
+  test("keeps unsupported three-box gaps conservative with a specific warning", () => {
+    const result = formatWireframe(
+      uglyInputFixtures.unsupportedThreeSiblingGap,
+      {
+        pad: 1,
+      },
+    );
+
+    expect(result).toEqual({
+      formattedText: uglyInputFixtures.unsupportedThreeSiblingGap,
       changed: false,
       warnings: [
         {

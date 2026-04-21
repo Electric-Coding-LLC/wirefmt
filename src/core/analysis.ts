@@ -39,6 +39,15 @@ export function analyzeWireframeBlock(
     return passthrough(block);
   }
 
+  const threeSiblingFrame = detectSupportedThreeSiblingFrame(observed);
+  if (threeSiblingFrame !== undefined) {
+    return analyzeSupportedAdjacentSiblingBoxes(
+      block,
+      threeSiblingFrame,
+      options,
+    );
+  }
+
   const adjacentFrame = detectSupportedAdjacentSiblingFrame(observed);
   if (adjacentFrame !== undefined) {
     return analyzeSupportedAdjacentSiblingBoxes(block, adjacentFrame, options);
@@ -364,9 +373,11 @@ function detectSupportedAdjacentSiblingFrame(
       continue;
     }
 
+    if (!hasSupportedSiblingContentRow(line.raw, [leftEdge, rightBoxLeft])) {
+      return undefined;
+    }
+
     if (
-      line.raw[leftEdge] !== "|" ||
-      line.raw[rightBoxLeft] !== "|" ||
       !hasLiteralSpacesOnlyBetween(line.raw, leftBoxRight + 1, rightBoxLeft)
     ) {
       return undefined;
@@ -376,6 +387,110 @@ function detectSupportedAdjacentSiblingFrame(
   return {
     splitStart: rightBoxLeft,
     splitEnd: leftBoxRight + 1,
+  };
+}
+
+function detectSupportedThreeSiblingFrame(
+  lines: readonly ObservedLine[],
+): SupportedAdjacentSiblingFrame | undefined {
+  const borderRows = lines
+    .map((line, index) => {
+      return { line, index };
+    })
+    .filter(({ line }) => isThreeBoxBorderLikeLine(line));
+
+  if (borderRows.length < 2) {
+    return undefined;
+  }
+
+  const topBorder = borderRows[0];
+  const bottomBorder = borderRows.at(-1);
+  if (
+    topBorder === undefined ||
+    bottomBorder === undefined ||
+    topBorder.index === bottomBorder.index ||
+    topBorder.index + 1 === bottomBorder.index ||
+    !samePositions(topBorder.line.pluses, bottomBorder.line.pluses)
+  ) {
+    return undefined;
+  }
+
+  const [
+    leftEdge,
+    firstBoxRight,
+    secondBoxLeft,
+    secondBoxRight,
+    thirdBoxLeft,
+    rightEdge,
+  ] = topBorder.line.pluses;
+  if (
+    leftEdge === undefined ||
+    firstBoxRight === undefined ||
+    secondBoxLeft === undefined ||
+    secondBoxRight === undefined ||
+    thirdBoxLeft === undefined ||
+    rightEdge === undefined
+  ) {
+    return undefined;
+  }
+
+  const firstGapWidth = secondBoxLeft - firstBoxRight - 1;
+  const secondGapWidth = thirdBoxLeft - secondBoxRight - 1;
+  if (
+    firstGapWidth < MIN_SUPPORTED_ADJACENT_BOX_GAP ||
+    firstGapWidth > MAX_SUPPORTED_ADJACENT_BOX_GAP ||
+    secondGapWidth < MIN_SUPPORTED_ADJACENT_BOX_GAP ||
+    secondGapWidth > MAX_SUPPORTED_ADJACENT_BOX_GAP
+  ) {
+    return undefined;
+  }
+
+  for (const line of lines) {
+    if (
+      !hasWhitespaceOnlyPrefix(line.raw, leftEdge) ||
+      !hasWhitespaceOnlySuffix(line.raw, rightEdge)
+    ) {
+      return undefined;
+    }
+  }
+
+  for (const [index, line] of lines.entries()) {
+    if (index === topBorder.index || index === bottomBorder.index) {
+      if (
+        !isThreeBoxBorderLikeLine(line) ||
+        !samePositions(line.pluses, topBorder.line.pluses)
+      ) {
+        return undefined;
+      }
+
+      continue;
+    }
+
+    if (
+      !hasSupportedSiblingContentRow(line.raw, [
+        leftEdge,
+        secondBoxLeft,
+        thirdBoxLeft,
+      ])
+    ) {
+      return undefined;
+    }
+
+    if (
+      !hasLiteralSpacesOnlyBetween(
+        line.raw,
+        firstBoxRight + 1,
+        secondBoxLeft,
+      ) ||
+      !hasLiteralSpacesOnlyBetween(line.raw, secondBoxRight + 1, thirdBoxLeft)
+    ) {
+      return undefined;
+    }
+  }
+
+  return {
+    splitStart: secondBoxLeft,
+    splitEnd: firstBoxRight + 1,
   };
 }
 
@@ -421,6 +536,74 @@ function isTwoBoxBorderLikeLine(line: ObservedLine): boolean {
     rightBetween.includes("-") &&
     /^[ -]+$/.test(rightBetween)
   );
+}
+
+function isThreeBoxBorderLikeLine(line: ObservedLine): boolean {
+  if (line.pluses.length !== 6) {
+    return false;
+  }
+
+  const [
+    leftEdge,
+    firstBoxRight,
+    secondBoxLeft,
+    secondBoxRight,
+    thirdBoxLeft,
+    rightEdge,
+  ] = line.pluses;
+  if (
+    leftEdge === undefined ||
+    firstBoxRight === undefined ||
+    secondBoxLeft === undefined ||
+    secondBoxRight === undefined ||
+    thirdBoxLeft === undefined ||
+    rightEdge === undefined ||
+    firstBoxRight - leftEdge < 2 ||
+    secondBoxRight - secondBoxLeft < 2 ||
+    rightEdge - thirdBoxLeft < 2
+  ) {
+    return false;
+  }
+
+  const firstGapWidth = secondBoxLeft - firstBoxRight - 1;
+  const secondGapWidth = thirdBoxLeft - secondBoxRight - 1;
+  if (
+    firstGapWidth < MIN_SUPPORTED_ADJACENT_BOX_GAP ||
+    firstGapWidth > MAX_SUPPORTED_ADJACENT_BOX_GAP ||
+    secondGapWidth < MIN_SUPPORTED_ADJACENT_BOX_GAP ||
+    secondGapWidth > MAX_SUPPORTED_ADJACENT_BOX_GAP
+  ) {
+    return false;
+  }
+
+  if (
+    !hasWhitespaceOnlyPrefix(line.raw, leftEdge) ||
+    !hasWhitespaceOnlySuffix(line.raw, rightEdge)
+  ) {
+    return false;
+  }
+
+  const firstBetween = line.raw.slice(leftEdge + 1, firstBoxRight);
+  const secondBetween = line.raw.slice(secondBoxLeft + 1, secondBoxRight);
+  const thirdBetween = line.raw.slice(thirdBoxLeft + 1, rightEdge);
+
+  return (
+    firstBetween.includes("-") &&
+    /^[ -]+$/.test(firstBetween) &&
+    hasLiteralSpacesOnlyBetween(line.raw, firstBoxRight + 1, secondBoxLeft) &&
+    secondBetween.includes("-") &&
+    /^[ -]+$/.test(secondBetween) &&
+    hasLiteralSpacesOnlyBetween(line.raw, secondBoxRight + 1, thirdBoxLeft) &&
+    thirdBetween.includes("-") &&
+    /^[ -]+$/.test(thirdBetween)
+  );
+}
+
+function hasSupportedSiblingContentRow(
+  raw: string,
+  leftEdges: readonly number[],
+): boolean {
+  return leftEdges.every((edge) => raw[edge] === "|");
 }
 
 function samePositions(
