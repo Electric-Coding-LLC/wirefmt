@@ -168,7 +168,8 @@ async function verifyMcpTransport(command, cwd, expectedVersion) {
     const toolList = await client.listTools();
     const toolNames = toolList.tools.map((tool) => tool.name).sort();
     assert(
-      toolNames.join(",") === ["wirefmt.format", "wirefmt.lint"].join(","),
+      toolNames.join(",") ===
+        ["wirefmt.describe", "wirefmt.format", "wirefmt.lint"].join(","),
       "unexpected MCP tool list",
     );
 
@@ -202,6 +203,18 @@ async function verifyMcpTransport(command, cwd, expectedVersion) {
         issues[0]?.source === "fixture.txt" &&
         issues[0]?.lineOrBlock === "2",
       "unexpected MCP lint issue payload",
+    );
+
+    const describeResult = await client.callTool({
+      name: "wirefmt.describe",
+      arguments: {
+        text: "+--+\n|x|\n+--+\n",
+      },
+    });
+    assert(
+      describeResult.structuredContent?.promptText ===
+        'A UI layout with one box labeled "x".',
+      "unexpected MCP describe result",
     );
   } finally {
     await client.close();
