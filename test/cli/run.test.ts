@@ -1,7 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { runCli } from "../../src/cli/run";
 import type { CliRuntime } from "../../src/cli/runtime";
-import type { FormatOptions, FormatResult, LintResult } from "../../src/core";
+import type {
+  DescribeResult,
+  FormatOptions,
+  FormatResult,
+  LintResult,
+} from "../../src/core";
 import { formatWarningsText } from "../../src/format-output";
 
 describe("runCli", () => {
@@ -115,7 +120,56 @@ describe("runCli", () => {
 
     expect(exitCode).toBe(0);
     expect(runtime.stdout).toContain("wirefmt format [file]");
+    expect(runtime.stdout).toContain("wirefmt describe [file]");
     expect(runtime.stderr).toBe("");
+  });
+
+  test("prints deterministic describe JSON", async () => {
+    const runtime = createRuntime({
+      stdin: "+--+\n|x|\n+--+\n",
+    });
+
+    const exitCode = await runCli(["describe"], runtime, {
+      describe(_text: string): DescribeResult {
+        return {
+          layouts: [
+            {
+              kind: "single-box",
+              startLine: 1,
+              endLine: 3,
+              label: "x",
+            },
+          ],
+          promptText: 'A UI layout with one box labeled "x".',
+          warnings: [],
+        };
+      },
+    });
+
+    expect(exitCode).toBe(0);
+    expect(JSON.parse(runtime.stdout)).toEqual({
+      layouts: [
+        {
+          kind: "single-box",
+          startLine: 1,
+          endLine: 3,
+          label: "x",
+        },
+      ],
+      promptText: 'A UI layout with one box labeled "x".',
+      warnings: [],
+    });
+    expect(runtime.stderr).toBe("");
+  });
+
+  test("rejects format-only flags for describe", async () => {
+    const runtime = createRuntime();
+
+    const exitCode = await runCli(["describe", "--width", "10"], runtime);
+
+    expect(exitCode).toBe(2);
+    expect(runtime.stdout).toBe("");
+    expect(runtime.stderr).toContain("--width is not supported for describe.");
   });
 
   test("reports invalid width as an operational error", async () => {

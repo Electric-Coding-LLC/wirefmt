@@ -1,5 +1,7 @@
 export * from "./core";
 export type {
+  WirefmtDescribeToolInput,
+  WirefmtDescribeToolResult,
   WirefmtFormatToolInput,
   WirefmtFormatToolResult,
   WirefmtLintToolInput,
@@ -8,6 +10,7 @@ export type {
 export {
   createWirefmtMcpServer,
   runMcpCli,
+  runWirefmtDescribeTool,
   runWirefmtFormatTool,
   runWirefmtLintTool,
 } from "./mcp";

@@ -28,6 +28,49 @@ export interface FormatResult {
   readonly warnings: readonly FormatWarning[];
 }
 
+export type DescribeLayout =
+  | SingleBoxLayout
+  | HorizontalSiblingBoxesLayout
+  | CompoundPanelLayout;
+
+export interface SingleBoxLayout {
+  readonly kind: "single-box";
+  readonly startLine: number;
+  readonly endLine: number;
+  readonly label: string;
+}
+
+export interface HorizontalSiblingBoxesLayout {
+  readonly kind: "horizontal-sibling-boxes";
+  readonly startLine: number;
+  readonly endLine: number;
+  readonly boxes: readonly DescribeBox[];
+  readonly gaps: readonly number[];
+}
+
+export interface CompoundPanelLayout {
+  readonly kind: "compound-panel";
+  readonly startLine: number;
+  readonly endLine: number;
+  readonly panels: readonly DescribePanel[];
+}
+
+export interface DescribeBox {
+  readonly position: "left" | "center" | "right";
+  readonly label: string;
+}
+
+export interface DescribePanel {
+  readonly position: "top" | "middle" | "bottom";
+  readonly label: string;
+}
+
+export interface DescribeResult {
+  readonly layouts: readonly DescribeLayout[];
+  readonly promptText: string;
+  readonly warnings: readonly FormatWarning[];
+}
+
 export type LintIssueCode = DiagnosticCode;
 
 export interface LintIssue {

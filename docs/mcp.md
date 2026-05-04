@@ -1,8 +1,8 @@
 # MCP Integration
 
 `wirefmt` ships a stdio MCP server through the `wirefmt-mcp` executable. The
-`v0.5` agent-facing surface is intentionally small: `wirefmt.format` and
-`wirefmt.lint`.
+agent-facing surface is intentionally small: `wirefmt.format`, `wirefmt.lint`,
+and `wirefmt.describe`.
 
 ## Runtime Prerequisites
 
@@ -52,19 +52,22 @@ entrypoint:
 
 ## Tool Surface
 
-The server registers two tools:
+The server registers three tools:
 
 - `wirefmt.format`
 - `wirefmt.lint`
+- `wirefmt.describe`
 
 Behavior notes:
 
-- `wirefmt.format` and `wirefmt.lint` still use the same shared core engine as
-  the CLI.
-- In `v0.8`, that shared engine supports single boxes, one bounded compound-box
-  panel shape, plus exactly two or three
-  adjacent sibling boxes in one block when adjacent boxes are separated by one
-  to three literal space columns and all boxes share the same row structure.
+- `wirefmt.format`, `wirefmt.lint`, and `wirefmt.describe` still use the same
+  shared core engine as the CLI.
+- That shared engine supports single boxes, one bounded compound-box panel
+  shape, plus exactly two or three adjacent sibling boxes in one block when
+  adjacent boxes are separated by one to three literal space columns and all
+  boxes share the same row structure.
+- `wirefmt.describe` exports deterministic layout JSON and prompt text for
+  supported layouts. It does not call image generation.
 - Conservative unsupported cases now use stable diagnostics such as
   `unsupported-box-columns`, `unsupported-adjacent-gap`,
   `unsupported-adjacent-stagger`, `unsupported-interior-border`, and
@@ -93,7 +96,7 @@ Behavior notes:
 
 ```json
 {
-  "text": "+---+   +----+\n|a|   |bb|\n+---+   +----+\n",
+  "text": "+---+   +----+\n| a |   | bb |\n+---+   +----+\n",
   "width": 10,
   "pad": 1
 }
@@ -103,6 +106,43 @@ Behavior notes:
 {
   "formattedText": "+--------+   +--------+\n| a      |   | bb     |\n+--------+   +--------+\n",
   "changed": true
+}
+```
+
+`wirefmt.describe` input:
+
+```json
+{
+  "text": "+-----+\n| top |\n+-----+\n| mid |\n+-----+\n| bot |\n+-----+\n"
+}
+```
+
+`wirefmt.describe` output:
+
+```json
+{
+  "layouts": [
+    {
+      "kind": "compound-panel",
+      "startLine": 1,
+      "endLine": 7,
+      "panels": [
+        {
+          "position": "top",
+          "label": "top"
+        },
+        {
+          "position": "middle",
+          "label": "mid"
+        },
+        {
+          "position": "bottom",
+          "label": "bot"
+        }
+      ]
+    }
+  ],
+  "promptText": "A UI layout with one outer frame containing 3 stacked panels separated by full-width horizontal dividers. The top panel is labeled \"top\". The middle panel is labeled \"mid\". The bottom panel is labeled \"bot\"."
 }
 ```
 
@@ -143,8 +183,9 @@ command = "wirefmt-mcp"
 
 For repo-local development, point `~/.codex/config.toml` at the Bun-launched
 checkout server shown above. A separate skill is optional; if you keep agent
-instructions, have them prefer `wirefmt.format` for formatting and
-`wirefmt.lint` for structured findings.
+instructions, have them prefer `wirefmt.format` for formatting,
+`wirefmt.lint` for structured findings, and `wirefmt.describe` for
+deterministic prompt scaffolds.
 
 This repo keeps the canonical skill text in
 [`skills/wirefmt/SKILL.md`](../skills/wirefmt/SKILL.md) plus the matching agent
@@ -155,4 +196,4 @@ prompt in [`skills/wirefmt/agents/openai.yaml`](../skills/wirefmt/agents/openai.
 - The MCP server uses the same shared formatter and lint engine as the CLI.
 - `warnings` is omitted when there is nothing to report.
 - `wirefmt.lint` defaults `source` to `<stdin>` when it is omitted.
-- `structuredContent` is the canonical result contract for both tools.
+- `structuredContent` is the canonical result contract for all tools.

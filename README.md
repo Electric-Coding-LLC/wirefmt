@@ -12,9 +12,11 @@ CLI and MCP surfaces for the same small box workflows.
 - Normalizes one single-box compound panel layout when full-width interior
   divider rows separate stacked content panels.
 - Preserves blank-line-separated non-box blocks around formatted boxes.
+- Describes supported layouts as deterministic JSON and prompt text that other
+  tools can use as layout intent.
 - Uses one shared core engine for the CLI and MCP tool.
 - Leaves unsupported layouts unchanged instead of guessing.
-- Keeps `format` and `lint` available through both CLI and MCP.
+- Keeps `format`, `lint`, and `describe` available through both CLI and MCP.
 
 ## Runtime Model
 
@@ -104,7 +106,7 @@ Output:
 Formatting the supported adjacent sibling-box shape:
 
 ```sh
-printf '+---+   +----+\n|a|   |bb|\n+---+   +----+\n' | bun run cli format --width 10
+printf '+---+   +----+\n| a |   | bb |\n+---+   +----+\n' | bun run cli format --width 10
 ```
 
 Output:
@@ -113,6 +115,42 @@ Output:
 +--------+   +--------+
 | a      |   | bb     |
 +--------+   +--------+
+```
+
+Describing a layout for prompt scaffolding:
+
+```sh
+printf '+-----+\n| top |\n+-----+\n| mid |\n+-----+\n| bot |\n+-----+\n' | bun run cli describe
+```
+
+Output:
+
+```json
+{
+  "layouts": [
+    {
+      "kind": "compound-panel",
+      "startLine": 1,
+      "endLine": 7,
+      "panels": [
+        {
+          "position": "top",
+          "label": "top"
+        },
+        {
+          "position": "middle",
+          "label": "mid"
+        },
+        {
+          "position": "bottom",
+          "label": "bot"
+        }
+      ]
+    }
+  ],
+  "promptText": "A UI layout with one outer frame containing 3 stacked panels separated by full-width horizontal dividers. The top panel is labeled \"top\". The middle panel is labeled \"mid\". The bottom panel is labeled \"bot\".",
+  "warnings": []
+}
 ```
 
 Formatting the supported compound panel shape:
@@ -140,6 +178,7 @@ Usage:
 ```text
 wirefmt format [file] [--width <number>] [--pad <number>]
 wirefmt lint [file] [--width <number>] [--pad <number>]
+wirefmt describe [file]
 wirefmt --help
 wirefmt --version
 ```
@@ -148,6 +187,8 @@ Commands:
 
 - `format`: Format a wireframe from a file or stdin.
 - `lint`: Report lint findings for a file or stdin.
+- `describe`: Export deterministic layout JSON and prompt text for supported
+  wireframes.
 
 Flags:
 
@@ -177,6 +218,8 @@ Notes:
 - `format` also supports one single-box compound panel layout with full-width
   divider rows; `width` and `pad` apply to the whole box, and divider rows stay
   full width after normalization.
+- `describe` reports supported layout relationships and labels. Unsupported
+  layouts return warnings without invented prompt text.
 - `lint` currently accepts `--width` and `--pad` for CLI surface parity, but the
   current lint engine does not use them when producing findings.
 
@@ -245,6 +288,7 @@ Registered tools:
 
 - `wirefmt.format`
 - `wirefmt.lint`
+- `wirefmt.describe`
 
 MCP client wiring examples:
 
@@ -293,11 +337,37 @@ MCP client wiring examples:
 }
 ```
 
+`wirefmt.describe` input:
+
+```json
+{
+  "text": "+--+\n|x|\n+--+\n"
+}
+```
+
+`wirefmt.describe` result:
+
+```json
+{
+  "layouts": [
+    {
+      "kind": "single-box",
+      "startLine": 1,
+      "endLine": 3,
+      "label": "x"
+    }
+  ],
+  "promptText": "A UI layout with one box labeled \"x\"."
+}
+```
+
 Notes:
 
-- `warnings` is omitted when the formatter has nothing to report.
+- `warnings` is omitted from MCP results when the tool has nothing to report.
 - `wirefmt.format` uses the same formatter as the CLI.
 - `wirefmt.lint` uses the same lint engine and stable issue codes as the CLI.
+- `wirefmt.describe` uses the same conservative layout analysis as the CLI and
+  does not call image generation.
 - MCP `structuredContent` carries the canonical result contract. Text content is
   still included for client compatibility.
 

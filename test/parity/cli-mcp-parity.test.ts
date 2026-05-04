@@ -3,7 +3,11 @@ import { runCli } from "../../src/cli/run";
 import type { CliRuntime } from "../../src/cli/runtime";
 import { formatWarningsText } from "../../src/format-output";
 import { formatLintIssuesText } from "../../src/lint-output";
-import { runWirefmtFormatTool, runWirefmtLintTool } from "../../src/mcp";
+import {
+  runWirefmtDescribeTool,
+  runWirefmtFormatTool,
+  runWirefmtLintTool,
+} from "../../src/mcp";
 import { WIREFMT_VERSION } from "../../src/version";
 import { uglyInputFixtures } from "../fixtures/ugly-inputs";
 
@@ -108,6 +112,50 @@ describe("CLI and MCP parity", () => {
       formattedText:
         "+--------+\n| top    |\n+--------+\n| mid    |\n+--------+\n| bot    |\n+--------+\n",
       changed: true,
+    });
+  });
+
+  test("describes the supported compound-box frame the same way through both interfaces", async () => {
+    const input = uglyInputFixtures.supportedCompoundPanels;
+    const runtime = createRuntime({
+      stdin: input,
+    });
+
+    const exitCode = await runCli(["describe"], runtime);
+    const toolResult = runWirefmtDescribeTool({
+      text: input,
+    });
+
+    expect(exitCode).toBe(0);
+    expect(JSON.parse(runtime.stdout)).toEqual({
+      ...toolResult,
+      warnings: [],
+    });
+    expect(runtime.stderr).toBe("");
+    expect(toolResult).toEqual({
+      layouts: [
+        {
+          kind: "compound-panel",
+          startLine: 1,
+          endLine: 7,
+          panels: [
+            {
+              position: "top",
+              label: "top",
+            },
+            {
+              position: "middle",
+              label: "mid",
+            },
+            {
+              position: "bottom",
+              label: "bot",
+            },
+          ],
+        },
+      ],
+      promptText:
+        'A UI layout with one outer frame containing 3 stacked panels separated by full-width horizontal dividers. The top panel is labeled "top". The middle panel is labeled "mid". The bottom panel is labeled "bot".',
     });
   });
 

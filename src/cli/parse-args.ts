@@ -2,7 +2,7 @@ import { DEFAULT_PAD } from "../core";
 import { WIREFMT_VERSION } from "../version";
 import { CLI_USAGE } from "./help";
 
-type CommandName = "format" | "lint";
+type CommandName = "format" | "lint" | "describe";
 
 export interface ParsedArgs {
   readonly command: CommandName;
@@ -42,7 +42,7 @@ export function parseCliArgs(
   }
 
   const [command, ...rest] = argv;
-  if (command !== "format" && command !== "lint") {
+  if (command !== "format" && command !== "lint" && command !== "describe") {
     throw new CliError(`Unknown command: ${command}`);
   }
 
@@ -65,12 +65,18 @@ export function parseCliArgs(
     }
 
     if (token === "--width") {
+      if (command === "describe") {
+        throw new CliError("--width is not supported for describe.");
+      }
       width = parsePositiveInteger(rest[index + 1], "--width");
       index += 1;
       continue;
     }
 
     if (token === "--pad") {
+      if (command === "describe") {
+        throw new CliError("--pad is not supported for describe.");
+      }
       pad = parsePositiveInteger(rest[index + 1], "--pad");
       index += 1;
       continue;
