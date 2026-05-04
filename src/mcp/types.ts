@@ -1,4 +1,4 @@
-import type { FormatWarning, LintIssue } from "../core";
+import type { DescribeLayout, FormatWarning, LintIssue } from "../core";
 
 export interface WirefmtFormatToolInput {
   readonly text: string;
@@ -21,4 +21,15 @@ export interface WirefmtLintToolInput {
 export interface WirefmtLintToolResult {
   readonly [key: string]: unknown;
   readonly issues: readonly LintIssue[];
+}
+
+export interface WirefmtDescribeToolInput {
+  readonly text: string;
+}
+
+export interface WirefmtDescribeToolResult {
+  readonly [key: string]: unknown;
+  readonly layouts: readonly DescribeLayout[];
+  readonly promptText: string;
+  readonly warnings?: readonly FormatWarning[];
 }

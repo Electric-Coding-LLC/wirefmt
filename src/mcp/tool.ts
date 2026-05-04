@@ -1,5 +1,12 @@
-import { DEFAULT_PAD, formatWireframe, lintWireframe } from "../core";
+import {
+  DEFAULT_PAD,
+  describeWireframe,
+  formatWireframe,
+  lintWireframe,
+} from "../core";
 import type {
+  WirefmtDescribeToolInput,
+  WirefmtDescribeToolResult,
   WirefmtFormatToolInput,
   WirefmtFormatToolResult,
   WirefmtLintToolInput,
@@ -7,6 +14,18 @@ import type {
 } from "./types";
 
 const DEFAULT_LINT_SOURCE = "<stdin>";
+
+export function runWirefmtDescribeTool(
+  input: WirefmtDescribeToolInput,
+): WirefmtDescribeToolResult {
+  const result = describeWireframe(input.text);
+
+  return {
+    layouts: result.layouts,
+    promptText: result.promptText,
+    ...(result.warnings.length > 0 ? { warnings: result.warnings } : {}),
+  };
+}
 
 export function runWirefmtFormatTool(
   input: WirefmtFormatToolInput,

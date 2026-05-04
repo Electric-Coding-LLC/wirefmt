@@ -1,5 +1,29 @@
 import { describe, expect, test } from "bun:test";
-import { runWirefmtFormatTool, runWirefmtLintTool } from "../../src/mcp";
+import {
+  runWirefmtDescribeTool,
+  runWirefmtFormatTool,
+  runWirefmtLintTool,
+} from "../../src/mcp";
+
+describe("runWirefmtDescribeTool", () => {
+  test("uses the shared core describer and omits empty warnings", () => {
+    const result = runWirefmtDescribeTool({
+      text: "+--+\n|x|\n+--+\n",
+    });
+
+    expect(result).toEqual({
+      layouts: [
+        {
+          kind: "single-box",
+          startLine: 1,
+          endLine: 3,
+          label: "x",
+        },
+      ],
+      promptText: 'A UI layout with one box labeled "x".',
+    });
+  });
+});
 
 describe("runWirefmtFormatTool", () => {
   test("uses the shared core formatter with default padding", () => {

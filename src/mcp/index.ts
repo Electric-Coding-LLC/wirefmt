@@ -1,7 +1,13 @@
 export { runMcpCli } from "./run";
 export { createWirefmtMcpServer, startWirefmtMcpServer } from "./server";
-export { runWirefmtFormatTool, runWirefmtLintTool } from "./tool";
+export {
+  runWirefmtDescribeTool,
+  runWirefmtFormatTool,
+  runWirefmtLintTool,
+} from "./tool";
 export type {
+  WirefmtDescribeToolInput,
+  WirefmtDescribeToolResult,
   WirefmtFormatToolInput,
   WirefmtFormatToolResult,
   WirefmtLintToolInput,

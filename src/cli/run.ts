@@ -1,4 +1,6 @@
 import {
+  type DescribeResult,
+  describeWireframe,
   type FormatOptions,
   type FormatResult,
   formatWireframe,
@@ -16,11 +18,13 @@ import {
 import { type CliRuntime, defaultRuntime } from "./runtime";
 
 interface CliHandlers {
+  describe(text: string): DescribeResult;
   format(text: string, options: FormatOptions): FormatResult;
   lint(text: string, source: string): LintResult;
 }
 
 const defaultHandlers: CliHandlers = {
+  describe: describeWireframe,
   format: formatWireframe,
   lint: lintWireframe,
 };
@@ -28,9 +32,13 @@ const defaultHandlers: CliHandlers = {
 export async function runCli(
   argv: readonly string[],
   runtime: CliRuntime = defaultRuntime,
-  handlers: CliHandlers = defaultHandlers,
+  handlers: Partial<CliHandlers> = {},
 ): Promise<number> {
   try {
+    const activeHandlers = {
+      ...defaultHandlers,
+      ...handlers,
+    };
     const parsed = parseCliArgs(argv);
 
     if ("mode" in parsed) {
@@ -47,7 +55,7 @@ export async function runCli(
         : await runtime.readFile(parsed.inputPath);
 
     if (parsed.command === "format") {
-      const result = handlers.format(
+      const result = activeHandlers.format(
         text,
         buildFormatOptions(parsed.width, parsed.pad),
       );
@@ -58,7 +66,13 @@ export async function runCli(
       return 0;
     }
 
-    const result = handlers.lint(text, source);
+    if (parsed.command === "describe") {
+      const result = activeHandlers.describe(text);
+      runtime.writeStdout(`${JSON.stringify(result, null, 2)}\n`);
+      return 0;
+    }
+
+    const result = activeHandlers.lint(text, source);
     if (result.issues.length > 0) {
       runtime.writeStdout(`${formatLintIssuesText(result.issues)}\n`);
       return 1;

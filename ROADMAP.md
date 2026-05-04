@@ -49,12 +49,13 @@ Rules:
 
 ## Current Baseline
 
-- Shipped baseline: `0.5.1`.
-- Supported formatting: single boxes plus exactly two horizontal sibling boxes
-  with one to three literal space columns and matching row structure.
-- Current conservative gaps: three-plus sibling boxes, staggered siblings,
-  wider column layouts, interior border rows, and text outside the detected
-  box.
+- Shipped baseline: `0.8.0`.
+- Supported formatting: single boxes, exactly two or three horizontal sibling
+  boxes with one to three literal space columns and matching row structure, and
+  one single-box compound panel layout with full-width divider rows.
+- Current conservative gaps: four-plus sibling boxes, staggered siblings, wider
+  column layouts, partial-width divider rows, nested boxes, and text outside the
+  detected box.
 
 ## Version Horizon
 
@@ -88,6 +89,17 @@ Execmap: `plans/v0.8/EXECMAP.md`
   nested-box or table formatting.
 - Reuse the same conservative contract: supported shapes normalize, unsupported
   shapes pass through unchanged with stable diagnostics.
+
+### v0.9: Deterministic Prompt Export
+Status: active
+Execmap: `plans/v0.9/EXECMAP.md`
+
+- Add a deterministic describe surface that turns supported ASCII layouts into
+  structured JSON and stable plain-English prompt scaffolds.
+- Support only the shape families already accepted by `format`: single boxes,
+  two or three horizontal sibling boxes, and compound single-box panels.
+- Keep image generation out of scope for this release; `wirefmt` should provide
+  repeatable layout intent that other tools can feed into image generation.
 
 ## Hold The Line
 

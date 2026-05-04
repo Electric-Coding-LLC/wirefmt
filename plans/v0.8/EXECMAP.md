@@ -26,7 +26,7 @@ with full-width interior border rows that separate stacked content panels.
   unsupported compound-panel layouts.
 - [x] Update README and MCP docs so `v0.8` is documented as a bounded
   compound-box release.
-- [ ] Prepare the `v0.8` release.
+- [x] Prepare the `v0.8` release.
 
 ## Done When
 
