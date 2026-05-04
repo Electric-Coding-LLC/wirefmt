@@ -91,7 +91,7 @@ Execmap: `plans/v0.8/EXECMAP.md`
   shapes pass through unchanged with stable diagnostics.
 
 ### v0.9: Deterministic Prompt Export
-Status: active
+Status: completed
 Execmap: `plans/v0.9/EXECMAP.md`
 
 - Add a deterministic describe surface that turns supported ASCII layouts into
